@@ -73,6 +73,12 @@ func HandlerLogin(s *State, cmd Command) error {
 		return fmt.Errorf("username can't be empty")
 	}
 
+
+	_, err := s.Db.GetUserByName(context.Background(), username)
+	if err != nil{
+		return fmt.Errorf("user doesn't exist %s", err)
+	}
+
 	if err := s.Conf.SetUser(username); err != nil{
 		return fmt.Errorf("error setting username")
 	}
@@ -110,8 +116,38 @@ func RegisterHandler(s *State, cmd Command) error{
 		return fmt.Errorf("error setting username")
 	}
 
-	fmt.Printf("set current user to %q\n", username)
+	fmt.Printf("User created successfully")
 	fmt.Printf("User's data is %q", user)
+
+	return nil
+}
+
+func ResetHandler(s *State, cmd Command) error{
+
+	err := s.Db.DeleteUser(context.Background())
+	if err != nil{
+		return fmt.Errorf("error deleting all users : %v", err)
+	}
+
+	return nil
+}
+
+func GetAllUsersHandler(s *State, cmd Command) error{
+	users, err := s.Db.GetUsers(context.Background())
+	if err != nil{
+		return fmt.Errorf("error getting all users: %v", err)
+	}
+
+	currentUser := s.Conf.UserName
+
+	for _, user := range users{
+		if user.Name == currentUser{
+			fmt.Printf("* %s (current)\n",user.Name)
+		}else{
+			fmt.Printf("* %s\n", user.Name)
+		}
+	}
+
 
 	return nil
 }

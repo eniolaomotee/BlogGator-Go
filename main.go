@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-
 	"github.com/eniolaomotee/BlogGator-Go/internal/config"
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/joho/godotenv"
@@ -23,6 +22,8 @@ func main(){
 	if err != nil{
 		log.Fatalf("error connecting to database %v", err)
 	}
+
+	defer db.Close()
 
 	dbQueries := database.New(db)
 
@@ -42,16 +43,11 @@ func main(){
 	// Build Command Registry
 	cmds := &config.Commands{}
 
-	if err := cmds.Register("login", config.HandlerLogin); err != nil{
-		log.Fatalf("error reading command %v", err)
-	}
-	if err = cmds.Register("register", config.RegisterHandler); err != nil{
-		log.Fatalf("error reading commanf : %v", err)
-	}
+	cmds.Register("login", config.HandlerLogin)
+	cmds.Register("register", config.RegisterHandler)
+	cmds.Register("reset", config.ResetHandler)
+	cmds.Register("users", config.GetAllUsersHandler)
 
-	// if err := cmds.Register("login", config.HandlerLogin); err != nil{
-	// 	log.Fatalf("error reading command %v", err)
-	// }
 	// Parse Args
 	if len(os.Args) < 2{
 		fmt.Fprintln(os.Stderr,"A command must be inputted")
