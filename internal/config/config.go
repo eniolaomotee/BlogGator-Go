@@ -100,8 +100,8 @@ func RegisterHandler(s *State, cmd Command) error{
 
 	user, err := s.Db.CreateUser(context.Background(), database.CreateUserParams{
 		ID:  uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name: username,
 	})
 	if err != nil{
@@ -214,8 +214,8 @@ func AddFeedHandler(s *State, cmd Command) error{
 
 	feed, err := s.Db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID: uuid.New(),	
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name: Name,
 		UserID: currentUser.ID,
 		Url: UrlP,
@@ -232,4 +232,30 @@ func AddFeedHandler(s *State, cmd Command) error{
 
 	fmt.Println("feed is", feed)
 	return nil
+}
+
+
+func GetAllFeeds(s *State, cmd Command) error{
+
+	feeds, err := s.Db.GetFeeds(context.Background())
+	if err != nil{
+		return fmt.Errorf("error getting feeds : %s", err)
+	}
+
+	if len(feeds) == 0{
+		fmt.Println("No feeds found")
+		return  nil
+	}
+
+	for _, feed := range feeds{
+		username, err := s.Db.GetUserFeed(context.Background(),feed.ID)
+		if err != nil{
+			return fmt.Errorf("error getting user feed")
+
+		}
+		fmt.Printf("name: %s url: %s user: %s\n", feed.Name, feed.Url, username)
+	}
+
+	return nil
+
 }

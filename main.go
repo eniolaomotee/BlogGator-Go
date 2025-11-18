@@ -49,11 +49,11 @@ func main(){
 	cmds.Register("users", config.GetAllUsersHandler)
 	cmds.Register("agg", config.AggregatorService)
 	cmds.Register("addfeed", config.AddFeedHandler)
+	cmds.Register("feeds", config.GetAllFeeds)
 
 	// Parse Args
 	if len(os.Args) < 2{
-		fmt.Fprintln(os.Stderr,"A command must be inputted")
-		os.Exit(1)
+		log.Fatalf("Usage: cli <command> [args...]")
 	}
 
 	name :=  os.Args[1]
