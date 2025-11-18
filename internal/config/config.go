@@ -116,7 +116,7 @@ func RegisterHandler(s *State, cmd Command) error{
 		return fmt.Errorf("error setting username")
 	}
 
-	fmt.Printf("User created successfully")
+	fmt.Printf("User created successfully\n")
 	fmt.Printf("User's data is %q", user)
 
 	return nil
@@ -196,5 +196,40 @@ func AggregatorService(s *State, cmd Command) error {
 	}
 
 	fmt.Printf("Feed is %v\n", *feed)
+	return nil
+}
+
+func AddFeedHandler(s *State, cmd Command) error{
+	if len(cmd.Args) < 2 {
+		return fmt.Errorf("url required")
+	}
+
+	Name := cmd.Args[0]
+	UrlP := cmd.Args[1]
+
+	currentUser, err := s.Db.GetUserByName(context.Background(), s.Conf.UserName)
+	if err != nil{
+		return fmt.Errorf("error getting user from database :%s", err)
+	}
+
+	feed, err := s.Db.CreateFeed(context.Background(), database.CreateFeedParams{
+		ID: uuid.New(),	
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name: Name,
+		UserID: currentUser.ID,
+		Url: UrlP,
+
+		
+	})
+
+	if err != nil{
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint"){
+			return fmt.Errorf("duplicate posts")
+		}
+		return  fmt.Errorf("error creating feed : %s", err)
+	}
+
+	fmt.Println("feed is", feed)
 	return nil
 }

@@ -48,6 +48,7 @@ func main(){
 	cmds.Register("reset", config.ResetHandler)
 	cmds.Register("users", config.GetAllUsersHandler)
 	cmds.Register("agg", config.AggregatorService)
+	cmds.Register("addfeed", config.AddFeedHandler)
 
 	// Parse Args
 	if len(os.Args) < 2{
