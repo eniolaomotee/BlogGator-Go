@@ -1,11 +1,15 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-
+	"strings"
+	"time"
+	"github.com/eniolaomotee/BlogGator-Go/internal/database"
+	"github.com/google/uuid"
 )
 
 const configFileName = ".gatorconfig.json"
@@ -75,6 +79,41 @@ func HandlerLogin(s *State, cmd Command) error {
 
 	fmt.Printf("set current user to %q\n",username)
 	return  nil
+}
+
+func RegisterHandler(s *State, cmd Command) error{
+	if len(cmd.Args) < 1 {
+		return fmt.Errorf("username required")
+	}
+
+	username := cmd.Args[0]
+
+	if username == ""{
+		return  fmt.Errorf("username can't be empty")
+	}
+
+	user, err := s.Db.CreateUser(context.Background(), database.CreateUserParams{
+		ID:  uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name: username,
+	})
+	if err != nil{
+		if strings.Contains(err.Error(), "duplicate key value"){
+			return  fmt.Errorf("user already exists")
+		}
+		return fmt.Errorf("error creating user : %v", err)
+	}
+
+
+	if err := s.Conf.SetUser(user.Name); err != nil{
+		return fmt.Errorf("error setting username")
+	}
+
+	fmt.Printf("set current user to %q\n", username)
+	fmt.Printf("User's data is %q", user)
+
+	return nil
 }
 
 // run Handler

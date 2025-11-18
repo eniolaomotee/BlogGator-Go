@@ -1,5 +1,7 @@
 package config
 
+import "github.com/eniolaomotee/BlogGator-Go/internal/database"
+
 type Config struct{
 	DbURL string `json:"db_url"`
 	UserName string `json:"current_user_name"`
@@ -7,6 +9,7 @@ type Config struct{
 
 type State struct{
 	Conf *Config
+	Db *database.Queries
 }
 
 type Command struct{
@@ -17,3 +20,4 @@ type Command struct{
 type Commands struct{
 	CliCommands map[string]func(*State, Command) error
 }
+
