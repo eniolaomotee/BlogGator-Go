@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
+	"path/filepath"
 	"time"
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
@@ -164,7 +164,6 @@ func (c *Commands) Run (s *State, cmd Command)error{
 	}
 }
 
-
 // Register Handler
 func (c *Commands) Register (name string, f func(*State, Command)error) error{
 	if name == ""{
@@ -183,4 +182,19 @@ func (c *Commands) Register (name string, f func(*State, Command)error) error{
 
 	return nil
 
+}
+
+func AggregatorService(s *State, cmd Command) error {
+
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil{
+		return fmt.Errorf("error fetching data from URL %s", err)
+	}
+
+	if feed == nil{
+		return fmt.Errorf("nil feed")
+	}
+
+	fmt.Printf("Feed is %v\n", *feed)
+	return nil
 }
