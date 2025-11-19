@@ -52,6 +52,7 @@ func main(){
 	cmds.Register("follow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.FollowHandler),1))
 	cmds.Register("addfeed", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.AddFeedHandler),2))
 	cmds.Register("following", config.MiddlewareLoggedIn(config.FeedFollowingHandler))
+	cmds.Register("unfollow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.UnfollowHandler),1))
 
 
 	// Parse Args

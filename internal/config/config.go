@@ -307,3 +307,24 @@ func FeedFollowingHandler(s *State, cmd Command, user database.User) error{
 
 	return  nil
 }
+
+
+func UnfollowHandler(s *State, cmd Command, user database.User) error {
+
+	url := cmd.Args[0]
+
+	urlP, err := s.Db.GetFeedByURL(context.Background(), url)
+	if err != nil{
+		return fmt.Errorf("couldn't get feed from URL %s", err)
+	}
+
+	err = s.Db.DeleteFeedFollowByUserAndFeed(context.Background(), database.DeleteFeedFollowByUserAndFeedParams{
+		UserID: user.ID,
+		FeedID: urlP.ID,
+	})
+	if err != nil{
+		return fmt.Errorf("error unfollowing user : %s", err)
+	}
+
+	return nil
+}

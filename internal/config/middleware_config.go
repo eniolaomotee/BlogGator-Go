@@ -32,7 +32,6 @@ func  ArgumentValidationMiddleware(handler func(s *State, cmd Command) error, ex
 			if len(cmd.Args) != expectedArgs{
 				return fmt.Errorf("usage: %s <expected %d args>", cmd.Name,expectedArgs)
 			}
-
 			return handler(s,cmd)
 		}
 	}
