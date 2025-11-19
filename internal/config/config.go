@@ -74,7 +74,7 @@ func HandlerLogin(s *State, cmd Command) error {
 	}
 
 
-	_, err := s.Db.GetUserByName(context.Background(), username)
+	_, err := s.Db.GetUser(context.Background(), username)
 	if err != nil{
 		return fmt.Errorf("user doesn't exist %s", err)
 	}
@@ -88,9 +88,6 @@ func HandlerLogin(s *State, cmd Command) error {
 }
 
 func RegisterHandler(s *State, cmd Command) error{
-	if len(cmd.Args) < 1 {
-		return fmt.Errorf("username required")
-	}
 
 	username := cmd.Args[0]
 
@@ -199,30 +196,21 @@ func AggregatorService(s *State, cmd Command) error {
 	return nil
 }
 
-func AddFeedHandler(s *State, cmd Command) error{
-	if len(cmd.Args) < 2 {
-		return fmt.Errorf("url required")
-	}
+func AddFeedHandler(s *State, cmd Command, user database.User) error{
 
 	Name := cmd.Args[0]
 	UrlP := cmd.Args[1]
-
-	currentUser, err := s.Db.GetUserByName(context.Background(), s.Conf.UserName)
-	if err != nil{
-		return fmt.Errorf("error getting user from database :%s", err)
-	}
 
 	feed, err := s.Db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID: uuid.New(),	
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Name: Name,
-		UserID: currentUser.ID,
+		UserID: user.ID,
 		Url: UrlP,
 
 		
 	})
-
 	if err != nil{
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint"){
 			return fmt.Errorf("duplicate posts")
@@ -230,7 +218,20 @@ func AddFeedHandler(s *State, cmd Command) error{
 		return  fmt.Errorf("error creating feed : %s", err)
 	}
 
-	fmt.Println("feed is", feed)
+	feedFollow, err := s.Db.CreateFeedFollow(context.Background(),database.CreateFeedFollowParams{
+		FeedID: feed.ID,
+		UserID: user.ID,
+	})
+	if err != nil{
+		return fmt.Errorf("couldn't create feed follow: %w", err)
+	}
+
+	fmt.Println("Feed created successfully")
+	fmt.Printf("feed is %s, user is %s", feed,user)
+	fmt.Println("Feed followed successfully")
+	fmt.Printf("username: %s, feedname: %s", feedFollow.UserName, feedFollow.FeedName)
+	fmt.Println("=====================================")
+
 	return nil
 }
 
@@ -260,21 +261,11 @@ func GetAllFeeds(s *State, cmd Command) error{
 
 }
 
-func FollowHandler(s *State, cmd Command) error{
-	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: %s <feed_url>", cmd.Name)
-	}
+func FollowHandler(s *State, cmd Command, user database.User) error{
 
 	url := cmd.Args[0]
 	if url == ""{
 		return  fmt.Errorf("please enter a URL")
-	}
-
-	userLoggedIn := s.Conf.UserName
-
-	user, err := s.Db.GetUserByName(context.Background(), userLoggedIn)
-	if err != nil{
-		return fmt.Errorf("couldn't get user's name %w", err)
 	}
 
 
@@ -297,28 +288,22 @@ func FollowHandler(s *State, cmd Command) error{
 
 }
 
-func FeedFollowingHandler(s *State, cmd Command) error{
-
-	currentUser := s.Conf.UserName
-
-	user, err := s.Db.GetUserByName(context.Background(), currentUser)
-	if err != nil{
-		return fmt.Errorf("couldn't get user by name : %w", err)
-	}
+func FeedFollowingHandler(s *State, cmd Command, user database.User) error{
 
 	feedForUser, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil{
 		return fmt.Errorf("couldn't get feed follows for user %w",err)
 	}
 
+	if len(feedForUser) == 0 {
+		fmt.Println("No feed follows found for this user")
+		return nil
+	}
 
+	fmt.Printf("Feed follows for user %s:\n", user.Name)
 	for _, feed := range feedForUser {
-		fmt.Printf("Feed Name is : %s, Current User following it is :%s\n", feed.FeedName, feed.UserName)
+		fmt.Printf("* %s\n", feed.FeedName)
 	}
 
 	return  nil
 }
-
-// add a getfeedfollowsforuser query - returns all the feeds follows for a given user  and include the names of the feed  and user in result
-// following command - should print all the names of the feeds the current user is following 
-// Enhance the addfeed command. It should now automatically create a feed follow record for the current user when they add a feed.

@@ -44,14 +44,15 @@ func main(){
 	cmds := &config.Commands{}
 
 	cmds.Register("login", config.HandlerLogin)
-	cmds.Register("register", config.RegisterHandler)
+	cmds.Register("register", config.ArgumentValidationMiddleware(config.RegisterHandler, 1))
 	cmds.Register("reset", config.ResetHandler)
 	cmds.Register("users", config.GetAllUsersHandler)
 	cmds.Register("agg", config.AggregatorService)
-	cmds.Register("addfeed", config.AddFeedHandler)
 	cmds.Register("feeds", config.GetAllFeeds)
-	cmds.Register("follow", config.FollowHandler)
-	cmds.Register("following", config.FeedFollowingHandler)
+	cmds.Register("follow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.FollowHandler),1))
+	cmds.Register("addfeed", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.AddFeedHandler),2))
+	cmds.Register("following", config.MiddlewareLoggedIn(config.FeedFollowingHandler))
+
 
 	// Parse Args
 	if len(os.Args) < 2{
