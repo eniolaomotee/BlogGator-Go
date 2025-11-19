@@ -50,6 +50,8 @@ func main(){
 	cmds.Register("agg", config.AggregatorService)
 	cmds.Register("addfeed", config.AddFeedHandler)
 	cmds.Register("feeds", config.GetAllFeeds)
+	cmds.Register("follow", config.FollowHandler)
+	cmds.Register("following", config.FeedFollowingHandler)
 
 	// Parse Args
 	if len(os.Args) < 2{

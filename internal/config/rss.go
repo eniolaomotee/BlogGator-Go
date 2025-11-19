@@ -37,9 +37,6 @@ func fetchFeed(ctx context.Context, feedURL string)(*RSSFeed, error){
 		return nil, fmt.Errorf("error reading data from response %w", err)
 	}
 
-	
-
-
 	var rss RSSFeed
 
 	err = xml.Unmarshal(data, &rss)

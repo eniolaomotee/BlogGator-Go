@@ -259,3 +259,66 @@ func GetAllFeeds(s *State, cmd Command) error{
 	return nil
 
 }
+
+func FollowHandler(s *State, cmd Command) error{
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <feed_url>", cmd.Name)
+	}
+
+	url := cmd.Args[0]
+	if url == ""{
+		return  fmt.Errorf("please enter a URL")
+	}
+
+	userLoggedIn := s.Conf.UserName
+
+	user, err := s.Db.GetUserByName(context.Background(), userLoggedIn)
+	if err != nil{
+		return fmt.Errorf("couldn't get user's name %w", err)
+	}
+
+
+	feed, err := s.Db.GetFeedByURL(context.Background(),url)
+	if err != nil{
+		return fmt.Errorf("couldn't get feed by URL %w", err)
+	}
+
+	feedFollow, err := s.Db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		FeedID: feed.ID,
+		UserID: user.ID,
+	})
+	if err != nil{
+		return fmt.Errorf("couldn't create follow feed %w", err)
+	}
+
+	fmt.Printf("feedName : %s, userName following : %s", feedFollow.FeedName, feedFollow.UserName)
+
+	return nil
+
+}
+
+func FeedFollowingHandler(s *State, cmd Command) error{
+
+	currentUser := s.Conf.UserName
+
+	user, err := s.Db.GetUserByName(context.Background(), currentUser)
+	if err != nil{
+		return fmt.Errorf("couldn't get user by name : %w", err)
+	}
+
+	feedForUser, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil{
+		return fmt.Errorf("couldn't get feed follows for user %w",err)
+	}
+
+
+	for _, feed := range feedForUser {
+		fmt.Printf("Feed Name is : %s, Current User following it is :%s\n", feed.FeedName, feed.UserName)
+	}
+
+	return  nil
+}
+
+// add a getfeedfollowsforuser query - returns all the feeds follows for a given user  and include the names of the feed  and user in result
+// following command - should print all the names of the feeds the current user is following 
+// Enhance the addfeed command. It should now automatically create a feed follow record for the current user when they add a feed.
