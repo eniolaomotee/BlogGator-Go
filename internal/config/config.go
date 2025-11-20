@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
 	"time"
+
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
@@ -183,17 +185,23 @@ func (c *Commands) Register (name string, f func(*State, Command)error) error{
 
 func AggregatorService(s *State, cmd Command) error {
 
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if len(cmd.Args) < 1 {
+		return fmt.Errorf("usage : agg <time_between_reqs>, e.g 'agg 1m' ")
+	}
+
+	time_between_reqs := cmd.Args[0]
+	timeBetweenRequest, err := time.ParseDuration(time_between_reqs)
 	if err != nil{
-		return fmt.Errorf("error fetching data from URL %s", err)
+		return  fmt.Errorf("invalid duration :%s",err)
 	}
 
-	if feed == nil{
-		return fmt.Errorf("nil feed")
-	}
+	log.Printf("Collecting feeds every %s...", timeBetweenRequest)
+	ticker := time.NewTicker(timeBetweenRequest)
+	defer ticker.Stop()
 
-	fmt.Printf("Feed is %v\n", *feed)
-	return nil
+	for ;; <-ticker.C{
+		ScrapeFeeds(s)
+	}
 }
 
 func AddFeedHandler(s *State, cmd Command, user database.User) error{
@@ -227,7 +235,7 @@ func AddFeedHandler(s *State, cmd Command, user database.User) error{
 	}
 
 	fmt.Println("Feed created successfully")
-	fmt.Printf("feed is %s, user is %s", feed,user)
+	fmt.Printf("feed is %v, user is %s", feed,user)
 	fmt.Println("Feed followed successfully")
 	fmt.Printf("username: %s, feedname: %s", feedFollow.UserName, feedFollow.FeedName)
 	fmt.Println("=====================================")
@@ -327,4 +335,30 @@ func UnfollowHandler(s *State, cmd Command, user database.User) error {
 	}
 
 	return nil
+}
+
+
+func ScrapeFeeds(s *State)error {
+	
+	// Get the next feed to fetch from the DB
+	nextFeed, err := s.Db.GetNextFeedToFetch(context.Background())
+	if err != nil{
+		return fmt.Errorf("couldn't fetch next feed : %s", err)
+	}
+
+	err = s.Db.MarkFeedFetched(context.Background(), nextFeed.ID)
+	if err != nil{
+		return fmt.Errorf("couldn't mark feed as fetched: %s", err)
+	}
+
+	feeds, err := fetchFeed(context.Background(), nextFeed.Url)
+	if err != nil{
+		return fmt.Errorf("couldn't fetch feed with this URL: %s", err)
+	}
+
+	for _, feed := range feeds.Channel.Item {
+		fmt.Printf("Title %s\n", feed.Title)
+	}
+
+	return  nil
 }
