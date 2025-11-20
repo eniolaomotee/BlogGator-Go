@@ -47,12 +47,13 @@ func main(){
 	cmds.Register("register", config.ArgumentValidationMiddleware(config.RegisterHandler, 1))
 	cmds.Register("reset", config.ResetHandler)
 	cmds.Register("users", config.GetAllUsersHandler)
-	cmds.Register("agg", config.AggregatorService)
+	cmds.Register("agg", config.MiddlewareLoggedIn(config.AggregatorService))
 	cmds.Register("feeds", config.GetAllFeeds)
 	cmds.Register("follow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.FollowHandler),1))
 	cmds.Register("addfeed", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.AddFeedHandler),2))
 	cmds.Register("following", config.MiddlewareLoggedIn(config.FeedFollowingHandler))
 	cmds.Register("unfollow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.UnfollowHandler),1))
+	cmds.Register("browse", config.MiddlewareLoggedIn(config.BrowseHandler))
 
 
 	// Parse Args

@@ -2,11 +2,13 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -183,7 +185,7 @@ func (c *Commands) Register (name string, f func(*State, Command)error) error{
 
 }
 
-func AggregatorService(s *State, cmd Command) error {
+func AggregatorService(s *State, cmd Command, user database.User) error {
 
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("usage : agg <time_between_reqs>, e.g 'agg 1m' ")
@@ -264,6 +266,7 @@ func GetAllFeeds(s *State, cmd Command) error{
 		}
 		fmt.Printf("name: %s url: %s user: %s\n", feed.Name, feed.Url, username)
 	}
+	fmt.Println("=====================================")
 
 	return nil
 
@@ -291,6 +294,7 @@ func FollowHandler(s *State, cmd Command, user database.User) error{
 	}
 
 	fmt.Printf("feedName : %s, userName following : %s", feedFollow.FeedName, feedFollow.UserName)
+	fmt.Println("=====================================")
 
 	return nil
 
@@ -312,6 +316,8 @@ func FeedFollowingHandler(s *State, cmd Command, user database.User) error{
 	for _, feed := range feedForUser {
 		fmt.Printf("* %s\n", feed.FeedName)
 	}
+	fmt.Println("=====================================")
+
 
 	return  nil
 }
@@ -357,8 +363,68 @@ func ScrapeFeeds(s *State)error {
 	}
 
 	for _, feed := range feeds.Channel.Item {
-		fmt.Printf("Title %s\n", feed.Title)
+		PublishedAt := sql.NullTime{}
+		if pubDate, err := time.Parse(time.RFC1123Z, feed.PubDate); err != nil{
+			PublishedAt = sql.NullTime{
+				Time: pubDate,
+				Valid: true,
+			}
+		}
+		_, err = s.Db.CreatePost(context.Background(), database.CreatePostParams{
+			ID: uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			Title: feed.Title,
+			Description: sql.NullString{
+				String: feed.Description,
+				Valid: true,
+			},
+			PublishedAt: PublishedAt,
+			Url: feed.Link,
+			FeedID: nextFeed.ID,
+		})
+		if err != nil{
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint"){
+				continue
+			}
+			fmt.Printf("Error creating posts :%s", err)
+			continue
+		}
+	}
+
+	log.Printf("Feed %s collected, %v posts found", nextFeed.Name, len(feeds.Channel.Item))
+	return  nil
+}
+
+
+
+func BrowseHandler(s *State, cmd Command , user database.User)error{
+	limit := 2
+	if len(cmd.Args) == 1{
+		if sLimit, err := strconv.Atoi(cmd.Args[0]); err != nil{
+			limit = sLimit
+		}else{
+			return fmt.Errorf("invalid Limit: %w", err)
+		}
+	}
+	
+	posts, err := s.Db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit: int32(limit),
+	})
+	if err != nil{
+		return fmt.Errorf("couldn't get post for user: %w", err)
+	}
+
+	fmt.Printf("Found %d posts for user %s:\n", len(posts), user.Name)
+	for _, post := range posts{
+		fmt.Printf("%s from %s\n", post.PublishedAt.Time.Format("Mon Jan 2"), post.FeedName)
+		fmt.Printf("---- %s-----", post.Title)
+		fmt.Printf("    %v\n",post.Description.String)
+		fmt.Printf("Link: %s\n", post.Url)
+		fmt.Println("=====================================")
 	}
 
 	return  nil
+
 }
