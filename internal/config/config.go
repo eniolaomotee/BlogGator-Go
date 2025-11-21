@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
@@ -236,10 +235,10 @@ func AddFeedHandler(s *State, cmd Command, user database.User) error{
 		return fmt.Errorf("couldn't create feed follow: %w", err)
 	}
 
-	fmt.Println("Feed created successfully")
-	fmt.Printf("feed is %v, user is %s", feed,user)
-	fmt.Println("Feed followed successfully")
-	fmt.Printf("username: %s, feedname: %s", feedFollow.UserName, feedFollow.FeedName)
+	fmt.Printf("Feed created successfully\n")
+	fmt.Printf("feed is %v\n, user is %s\n", feed,user)
+	fmt.Printf("Feed followed successfully\n")
+	fmt.Printf("username: %s\n, feedname: %s\n", feedFollow.UserName, feedFollow.FeedName)
 	fmt.Println("=====================================")
 
 	return nil
@@ -293,7 +292,7 @@ func FollowHandler(s *State, cmd Command, user database.User) error{
 		return fmt.Errorf("couldn't create follow feed %w", err)
 	}
 
-	fmt.Printf("feedName : %s, userName following : %s", feedFollow.FeedName, feedFollow.UserName)
+	fmt.Printf("feedName : %s, userName following this feed : %s\n", feedFollow.FeedName, feedFollow.UserName)
 	fmt.Println("=====================================")
 
 	return nil
@@ -345,7 +344,7 @@ func UnfollowHandler(s *State, cmd Command, user database.User) error {
 
 
 func ScrapeFeeds(s *State)error {
-	
+
 	// Get the next feed to fetch from the DB
 	nextFeed, err := s.Db.GetNextFeedToFetch(context.Background())
 	if err != nil{
@@ -364,7 +363,8 @@ func ScrapeFeeds(s *State)error {
 
 	for _, feed := range feeds.Channel.Item {
 		PublishedAt := sql.NullTime{}
-		if pubDate, err := time.Parse(time.RFC1123Z, feed.PubDate); err != nil{
+		pubDate, err := time.Parse(time.RFC1123Z, feed.PubDate); 
+		if err == nil{
 			PublishedAt = sql.NullTime{
 				Time: pubDate,
 				Valid: true,
