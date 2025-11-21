@@ -8,9 +8,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	//"sort"
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
@@ -65,7 +67,7 @@ func  (cfg *Config) SetUser (user string) error{
 
 
 // login function handler
-func HandlerLogin(s *State, cmd Command) error {
+func HandlerLogin(s *State, cmd Command, user database.User) error {
 
 	if len(cmd.Args) < 1{
 		return fmt.Errorf("username required")
@@ -77,10 +79,10 @@ func HandlerLogin(s *State, cmd Command) error {
 	}
 
 
-	_, err := s.Db.GetUser(context.Background(), username)
-	if err != nil{
-		return fmt.Errorf("user doesn't exist %s", err)
-	}
+	// _, err := s.Db.GetUser(context.Background(), username)
+	// if err != nil{
+	// 	return fmt.Errorf("user doesn't exist %s", err)
+	// }
 
 	if err := s.Conf.SetUser(username); err != nil{
 		return fmt.Errorf("error setting username")
@@ -147,7 +149,6 @@ func GetAllUsersHandler(s *State, cmd Command) error{
 			fmt.Printf("* %s\n", user.Name)
 		}
 	}
-
 
 	return nil
 }
@@ -415,6 +416,19 @@ func BrowseHandler(s *State, cmd Command , user database.User)error{
 	if err != nil{
 		return fmt.Errorf("couldn't get post for user: %w", err)
 	}
+	
+	// sort_dir := "asc"
+	// if strings.ToLower(sort_params) == "desc"{
+	// 	sort_dir = "desc"
+	// }
+
+
+	// sort.Slice(posts, func(i, j int) bool {
+	// 	if sort_dir == "desc"{
+	// 		return posts[i].CreatedAt.After(posts[j].CreatedAt)
+	// 	}
+	// 	return posts[i].CreatedAt.Before(posts[j].CreatedAt)
+	// })
 
 	fmt.Printf("Found %d posts for user %s:\n", len(posts), user.Name)
 	for _, post := range posts{
@@ -428,3 +442,5 @@ func BrowseHandler(s *State, cmd Command , user database.User)error{
 	return  nil
 
 }
+
+

@@ -43,7 +43,7 @@ func main(){
 	// Build Command Registry
 	cmds := &config.Commands{}
 
-	cmds.Register("login", config.ArgumentValidationMiddleware(config.HandlerLogin, 1))
+	cmds.Register("login", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.HandlerLogin),1))
 	cmds.Register("register", config.ArgumentValidationMiddleware(config.RegisterHandler, 1))
 	cmds.Register("reset", config.ResetHandler)
 	cmds.Register("users", config.GetAllUsersHandler)
