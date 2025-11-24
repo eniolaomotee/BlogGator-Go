@@ -1,6 +1,6 @@
-# BlogGator-Go - RSS Feed Aggregator CLI
+# BlogGator - RSS Feed Aggregator CLI
 
-Gator is a command-line RSS feed aggregator that allows you to follow and browse RSS feeds directly from your terminal. Built with Go and PostgreSQL.
+BlogGator is a command-line RSS feed aggregator that allows you to follow and browse RSS feeds directly from your terminal. Built with Go and PostgreSQL.
 
 ## Prerequisities
 Before running BlogGator, you'll need to have the following installed:
@@ -56,6 +56,7 @@ gator addfeed "Tech cruch blog Blog" https://techcrunch.com/feed/
 ``` bash
 gator follow <feed_url>
 ```
+
 ## View Your Followed Feeds
 ``` bash
 gator following
@@ -73,10 +74,11 @@ gator agg 1m
 ```
 
 ## Browse Posts
-```bash
 View recent posts from your followed feeds:
-```
+
+```bash
 gator browse [limit]
+```
 
 Example (show 10 most recent posts):
 
@@ -86,11 +88,12 @@ gator browse 10
 
 
 ## Other Commands
-gator login <username> - Switch to a different user
-gator users - List all registered users
-gator feeds - List all available feeds
-gator unfollow <feed_url> - Unfollow a feed
-gator reset - Reset the database (warning: deletes all data!)
+
+``` gator login <username> ``` - Switch to a different user
+``` gator users ``` - List all registered users
+``` gator feeds ``` - List all available feeds
+``` gator unfollow <feed_url> ``` - Unfollow a feed
+``` gator reset ``` - Reset the database (warning: deletes all data!)
 
 
 # Example Workflow
