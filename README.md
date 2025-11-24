@@ -90,9 +90,17 @@ gator browse 10
 ## Other Commands
 
 ``` gator login <username> ``` - Switch to a different user
+
+
 ``` gator users ``` - List all registered users
+
+
 ``` gator feeds ``` - List all available feeds
+
+
 ``` gator unfollow <feed_url> ``` - Unfollow a feed
+
+
 ``` gator reset ``` - Reset the database (warning: deletes all data!)
 
 
