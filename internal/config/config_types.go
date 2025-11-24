@@ -36,3 +36,10 @@ type RSSItem struct{
 	Description string `xml:"description"`
 	PubDate string `xml:"pubDate"`
 }
+
+type BrowseFlags struct{
+	Limit int
+	SortBy     string
+	Order      string
+	FeedFilter string
+}

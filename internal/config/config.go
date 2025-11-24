@@ -8,11 +8,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	//"sort"
-	"strconv"
 	"strings"
 	"time"
-
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
@@ -397,40 +394,8 @@ func ScrapeFeeds(s *State)error {
 	return  nil
 }
 
-
-
-func BrowseHandler(s *State, cmd Command , user database.User)error{
-	limit := 2
-	if len(cmd.Args) == 1{
-		if sLimit, err := strconv.Atoi(cmd.Args[0]); err != nil{
-			limit = sLimit
-		}else{
-			return fmt.Errorf("invalid Limit: %w", err)
-		}
-	}
-	
-	posts, err := s.Db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
-		UserID: user.ID,
-		Limit: int32(limit),
-	})
-	if err != nil{
-		return fmt.Errorf("couldn't get post for user: %w", err)
-	}
-	
-	// sort_dir := "asc"
-	// if strings.ToLower(sort_params) == "desc"{
-	// 	sort_dir = "desc"
-	// }
-
-
-	// sort.Slice(posts, func(i, j int) bool {
-	// 	if sort_dir == "desc"{
-	// 		return posts[i].CreatedAt.After(posts[j].CreatedAt)
-	// 	}
-	// 	return posts[i].CreatedAt.Before(posts[j].CreatedAt)
-	// })
-
-	fmt.Printf("Found %d posts for user %s:\n", len(posts), user.Name)
+func displayPosts(posts []database.GetPostsForUserSortedRow, username string){
+	fmt.Println("Found %d posts for user %s:\n",len(posts),username)
 	for _, post := range posts{
 		fmt.Printf("%s from %s\n", post.PublishedAt.Time.Format("Mon Jan 2"), post.FeedName)
 		fmt.Printf("---- %s-----", post.Title)
@@ -438,9 +403,43 @@ func BrowseHandler(s *State, cmd Command , user database.User)error{
 		fmt.Printf("Link: %s\n", post.Url)
 		fmt.Println("=====================================")
 	}
+}
+
+
+
+
+func BrowseHandler(s *State, cmd Command , user database.User)error{
+	// Parse flags
+	flags, err := ParseBrowseFlags(cmd.Args)
+	if err != nil{
+		return err
+	}
+	
+	sortParam := flags.SortBy + "_" + flags.Order
+
+
+	posts, err := s.Db.GetPostsForUserSorted(context.Background(), database.GetPostsForUserSortedParams{
+		UserID: user.ID,
+		Limit: int32(flags.Limit),
+		Column3: flags.FeedFilter,
+		Column4: sortParam,
+	})
+	if err != nil{
+		return fmt.Errorf("couldn't get posts for user: %w",err)
+	}
+
+	if flags.FeedFilter != ""{
+		filtered := []database.GetPostsForUserSortedRow{}
+		for _, post := range posts{
+			if strings.Contains(strings.ToLower(post.FeedName), strings.ToLower(flags.FeedFilter)){
+				filtered = append(filtered, post)
+			}
+		}
+		posts = filtered
+	}
+	
+	displayPosts(posts,user.Name)
 
 	return  nil
 
 }
-
-
