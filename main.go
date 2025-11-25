@@ -14,11 +14,17 @@ import (
 
 
 func main(){
+	// Read config
+	cfg, err := config.Read()
+	if err != nil{
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	//Load dotenv
 	godotenv.Load()
-	dbUrl := os.Getenv("DB_URL")
 	// Database connections
-	db, err := sql.Open("postgres",dbUrl)
+	db, err := sql.Open("postgres",cfg.DbURL)
 	if err != nil{
 		log.Fatalf("error connecting to database %v", err)
 	}
@@ -27,13 +33,6 @@ func main(){
 
 	dbQueries := database.New(db)
 
-
-	// Read config
-	cfg, err := config.Read()
-	if err != nil{
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 	//Build State
 	state := &config.State{
 		Db : dbQueries,
@@ -54,6 +53,7 @@ func main(){
 	cmds.Register("following", config.MiddlewareLoggedIn(config.FeedFollowingHandler))
 	cmds.Register("unfollow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.UnfollowHandler),1))
 	cmds.Register("browse", config.MiddlewareLoggedIn(config.BrowseHandler))
+	cmds.Register("user", config.MiddlewareLoggedIn(config.CurrentUserHandler))
 
 
 	// Parse Args
@@ -70,6 +70,5 @@ func main(){
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-
 
 }

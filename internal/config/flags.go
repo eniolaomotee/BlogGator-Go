@@ -6,12 +6,15 @@ import (
 	"strings"
 )
 
+
+// Handles sorting,filtering and Paginatio 
 func ParseBrowseFlags(args []string)(*BrowseFlags, error){
 	flags := &BrowseFlags{
 		Limit: 2,
 		SortBy: "published_at",
 		Order: "desc",
 		FeedFilter: "",
+		Page:10,
 	}
 
 	// Parsing args for flags and positional flags
@@ -35,7 +38,26 @@ func ParseBrowseFlags(args []string)(*BrowseFlags, error){
 			flags.Limit = val
 			i++
 			// sorting
-		} else if strings.HasPrefix(arg, "--sort="){
+		} else if strings.HasPrefix(arg, "--page="){
+			val,err := strconv.Atoi(strings.TrimPrefix(arg, "--page="))
+			if err != nil{
+				return nil, fmt.Errorf("invalid page value %w", err)
+			}
+			flags.Page = val
+		}else if arg == "--page" || arg == "-p"{
+			if i+1 >= len(args){
+				return nil, fmt.Errorf("--page requires a value")
+			}
+			val, err := strconv.Atoi(args[i+1])
+			if err != nil{
+				return nil, fmt.Errorf("invalid page value :%w", err)
+			}
+			if val < 1{
+				return nil, fmt.Errorf("page must be >= 1")
+			}
+			flags.Page = val
+			i++
+		}else if strings.HasPrefix(arg, "--sort="){
 			flags.SortBy = strings.TrimPrefix(arg,"--sort=")
 		}else if arg == "--sort" || arg == "-s"{
 			if i+1 >= len(args){

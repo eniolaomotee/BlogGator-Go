@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
@@ -39,6 +40,7 @@ func Read()(Config, error){
 	return conf,nil
 }
 
+// Set User
 func  (cfg *Config) SetUser (user string) error{
 	cfg.UserName = user
 	
@@ -76,11 +78,6 @@ func HandlerLogin(s *State, cmd Command, user database.User) error {
 	}
 
 
-	// _, err := s.Db.GetUser(context.Background(), username)
-	// if err != nil{
-	// 	return fmt.Errorf("user doesn't exist %s", err)
-	// }
-
 	if err := s.Conf.SetUser(username); err != nil{
 		return fmt.Errorf("error setting username")
 	}
@@ -89,6 +86,7 @@ func HandlerLogin(s *State, cmd Command, user database.User) error {
 	return  nil
 }
 
+// Register User
 func RegisterHandler(s *State, cmd Command) error{
 
 	username := cmd.Args[0]
@@ -110,7 +108,6 @@ func RegisterHandler(s *State, cmd Command) error{
 		return fmt.Errorf("error creating user : %v", err)
 	}
 
-
 	if err := s.Conf.SetUser(user.Name); err != nil{
 		return fmt.Errorf("error setting username")
 	}
@@ -121,6 +118,7 @@ func RegisterHandler(s *State, cmd Command) error{
 	return nil
 }
 
+// Reset User DB
 func ResetHandler(s *State, cmd Command) error{
 
 	err := s.Db.DeleteUser(context.Background())
@@ -131,6 +129,7 @@ func ResetHandler(s *State, cmd Command) error{
 	return nil
 }
 
+// Get All users and show current User 
 func GetAllUsersHandler(s *State, cmd Command) error{
 	users, err := s.Db.GetUsers(context.Background())
 	if err != nil{
@@ -182,25 +181,10 @@ func (c *Commands) Register (name string, f func(*State, Command)error) error{
 
 }
 
-func AggregatorService(s *State, cmd Command, user database.User) error {
 
-	if len(cmd.Args) < 1 {
-		return fmt.Errorf("usage : agg <time_between_reqs>, e.g 'agg 1m' ")
-	}
-
-	time_between_reqs := cmd.Args[0]
-	timeBetweenRequest, err := time.ParseDuration(time_between_reqs)
-	if err != nil{
-		return  fmt.Errorf("invalid duration :%s",err)
-	}
-
-	log.Printf("Collecting feeds every %s...", timeBetweenRequest)
-	ticker := time.NewTicker(timeBetweenRequest)
-	defer ticker.Stop()
-
-	for ;; <-ticker.C{
-		ScrapeFeeds(s)
-	}
+func CurrentUserHandler(s *State, cmd Command, user database.User)error{
+	fmt.Printf("The current user is %s and was created at %s",user.Name, user.CreatedAt)
+	return nil
 }
 
 func AddFeedHandler(s *State, cmd Command, user database.User) error{
@@ -341,27 +325,21 @@ func UnfollowHandler(s *State, cmd Command, user database.User) error {
 }
 
 
-func ScrapeFeeds(s *State)error {
+func ScrapeFeeds(s *State, feed database.Feed)error {
 
-	// Get the next feed to fetch from the DB
-	nextFeed, err := s.Db.GetNextFeedToFetch(context.Background())
-	if err != nil{
-		return fmt.Errorf("couldn't fetch next feed : %s", err)
-	}
-
-	err = s.Db.MarkFeedFetched(context.Background(), nextFeed.ID)
+	err := s.Db.MarkFeedFetched(context.Background(), feed.ID)
 	if err != nil{
 		return fmt.Errorf("couldn't mark feed as fetched: %s", err)
 	}
 
-	feeds, err := fetchFeed(context.Background(), nextFeed.Url)
+	feeds, err := fetchFeed(context.Background(), feed.Url)
 	if err != nil{
 		return fmt.Errorf("couldn't fetch feed with this URL: %s", err)
 	}
 
-	for _, feed := range feeds.Channel.Item {
+	for _, item := range feeds.Channel.Item {
 		PublishedAt := sql.NullTime{}
-		pubDate, err := time.Parse(time.RFC1123Z, feed.PubDate); 
+		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate); 
 		if err == nil{
 			PublishedAt = sql.NullTime{
 				Time: pubDate,
@@ -369,17 +347,16 @@ func ScrapeFeeds(s *State)error {
 			}
 		}
 		_, err = s.Db.CreatePost(context.Background(), database.CreatePostParams{
-			ID: uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
-			Title: feed.Title,
+			Title: item.Title,
 			Description: sql.NullString{
-				String: feed.Description,
+				String: item.Description,
 				Valid: true,
 			},
 			PublishedAt: PublishedAt,
-			Url: feed.Link,
-			FeedID: nextFeed.ID,
+			Url: item.Link,
+			FeedID: feed.ID,
 		})
 		if err != nil{
 			if strings.Contains(err.Error(), "duplicate key value violates unique constraint"){
@@ -390,12 +367,12 @@ func ScrapeFeeds(s *State)error {
 		}
 	}
 
-	log.Printf("Feed %s collected, %v posts found", nextFeed.Name, len(feeds.Channel.Item))
+	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feeds.Channel.Item))
 	return  nil
 }
 
 func displayPosts(posts []database.GetPostsForUserSortedRow, username string){
-	fmt.Println("Found %d posts for user %s:\n",len(posts),username)
+	fmt.Printf("Found %d posts for user %s:\n",len(posts),username)
 	for _, post := range posts{
 		fmt.Printf("%s from %s\n", post.PublishedAt.Time.Format("Mon Jan 2"), post.FeedName)
 		fmt.Printf("---- %s-----", post.Title)
@@ -406,14 +383,16 @@ func displayPosts(posts []database.GetPostsForUserSortedRow, username string){
 }
 
 
-
-
 func BrowseHandler(s *State, cmd Command , user database.User)error{
 	// Parse flags
 	flags, err := ParseBrowseFlags(cmd.Args)
 	if err != nil{
 		return err
 	}
+
+	// Calculate offset based on page number
+	// Page 1 = offset 0, Page 2 = offset (limit), Page 3 = offset (2*limit), etc.
+	offset := (flags.Page - 1) * flags.Limit
 	
 	sortParam := flags.SortBy + "_" + flags.Order
 
@@ -423,6 +402,7 @@ func BrowseHandler(s *State, cmd Command , user database.User)error{
 		Limit: int32(flags.Limit),
 		Column3: flags.FeedFilter,
 		Column4: sortParam,
+		Offset: int32(offset),
 	})
 	if err != nil{
 		return fmt.Errorf("couldn't get posts for user: %w",err)

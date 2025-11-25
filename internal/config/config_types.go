@@ -42,4 +42,5 @@ type BrowseFlags struct{
 	SortBy     string
 	Order      string
 	FeedFilter string
+	Page int
 }

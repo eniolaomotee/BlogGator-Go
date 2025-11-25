@@ -154,6 +154,7 @@ ORDER BY
         ELSE 0 
     END
 LIMIT $2
+OFFSET $5
 `
 
 type GetPostsForUserSortedParams struct {
@@ -161,6 +162,7 @@ type GetPostsForUserSortedParams struct {
 	Limit   int32
 	Column3 interface{}
 	Column4 interface{}
+	Offset  int32
 }
 
 type GetPostsForUserSortedRow struct {
@@ -181,6 +183,7 @@ func (q *Queries) GetPostsForUserSorted(ctx context.Context, arg GetPostsForUser
 		arg.Limit,
 		arg.Column3,
 		arg.Column4,
+		arg.Offset,
 	)
 	if err != nil {
 		return nil, err

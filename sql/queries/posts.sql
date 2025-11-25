@@ -53,4 +53,5 @@ ORDER BY
         WHEN $4 LIKE '%_desc' THEN -1 
         ELSE 0 
     END
-LIMIT $2;
+LIMIT $2
+OFFSET $5;
