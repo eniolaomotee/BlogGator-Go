@@ -43,4 +43,11 @@ type BrowseFlags struct{
 	Order      string
 	FeedFilter string
 	Page int
+	
+}
+
+type SearchFlags struct{
+	Field string
+	Query string
+	Limit int
 }

@@ -87,9 +87,7 @@ func AggregatorService(s *State, cmd Command, user database.User) error {
 		}
 	}
 
-
 }
-
 
 // workers processes feeds from channel
 func worker(ctx context.Context, id int , s *State, feedChan <- chan database.Feed, errChan chan <- error, wg *sync.WaitGroup){

@@ -215,3 +215,70 @@ func (q *Queries) GetPostsForUserSorted(ctx context.Context, arg GetPostsForUser
 	}
 	return items, nil
 }
+
+const searchPosts = `-- name: SearchPosts :many
+SELECT p.id, p.created_at, p.updated_at, p.title, p.url, 
+       p.description, p.published_at, p.feed_id, f.name as feed_name
+FROM posts p
+JOIN feed_follows ff ON p.feed_id = ff.feed_id
+JOIN feeds f ON p.feed_id = f.id
+WHERE ff.user_id = $1
+  AND (
+    p.title ILIKE '%' || $2 || '%' 
+    OR p.description ILIKE '%' || $2 || '%'
+    OR f.name ILIKE '%' || $2 || '%'
+  )
+ORDER BY p.published_at DESC
+LIMIT $3
+`
+
+type SearchPostsParams struct {
+	UserID  uuid.UUID
+	Column2 sql.NullString
+	Limit   int32
+}
+
+type SearchPostsRow struct {
+	ID          uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Title       string
+	Url         string
+	Description sql.NullString
+	PublishedAt sql.NullTime
+	FeedID      uuid.UUID
+	FeedName    string
+}
+
+func (q *Queries) SearchPosts(ctx context.Context, arg SearchPostsParams) ([]SearchPostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchPosts, arg.UserID, arg.Column2, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchPostsRow
+	for rows.Next() {
+		var i SearchPostsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Url,
+			&i.Description,
+			&i.PublishedAt,
+			&i.FeedID,
+			&i.FeedName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

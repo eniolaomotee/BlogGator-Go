@@ -423,3 +423,74 @@ func BrowseHandler(s *State, cmd Command , user database.User)error{
 	return  nil
 
 }
+
+func SearchHandler(s *State, cmd Command, user database.User) error {
+	// Parse search flags
+	flags, err := ParseSearchFlags(cmd.Args)
+	if err != nil {
+		return err
+	}
+
+	// Search posts
+	posts, err := s.Db.SearchPosts(context.Background(), database.SearchPostsParams{
+		UserID: user.ID,
+		Column2: sql.NullString{
+			String: flags.Query,
+			Valid: true,
+		},
+		Limit:  int32(flags.Limit),
+	})
+	if err != nil {
+		return fmt.Errorf("couldn't search posts: %w", err)
+	}
+
+	// Filter by field if specified
+	if flags.Field != "all" {
+		posts = filterPostsByField(posts, flags.Query, flags.Field)
+	}
+
+	// Display results
+	if len(posts) == 0 {
+		fmt.Printf("No posts found matching '%s'\n", flags.Query)
+		return nil
+	}
+
+	// Output results
+	fmt.Printf("Found %d posts matching '%s':\n\n", len(posts), flags.Query)
+	for i, post := range posts {
+		fmt.Printf("%d. %s\n", i+1, post.Title)
+		fmt.Printf("   Feed: %s\n", post.FeedName)
+		fmt.Printf("   Published: %s\n", post.PublishedAt.Time.Format("Mon Jan 2, 2006"))
+		fmt.Printf("   Link: %s\n", post.Url)
+		fmt.Println("   " + strings.Repeat("-", 50))
+	}
+
+	return nil
+}
+
+// filterPostsByField filters posts to only match specific fields
+func filterPostsByField(posts []database.SearchPostsRow, query string, field string) []database.SearchPostsRow {
+	query = strings.ToLower(query)
+	filtered := []database.SearchPostsRow{}
+
+	for _, post := range posts {
+		match := false
+
+		switch field {
+		case "title":
+			match = strings.Contains(strings.ToLower(post.Title), query)
+		case "description":
+			if post.Description.Valid {
+				match = strings.Contains(strings.ToLower(post.Description.String), query)
+			}
+		case "feed":
+			match = strings.Contains(strings.ToLower(post.FeedName), query)
+		}
+
+		if match {
+			filtered = append(filtered, post)
+		}
+	}
+
+	return filtered
+}

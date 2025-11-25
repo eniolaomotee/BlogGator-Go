@@ -55,3 +55,19 @@ ORDER BY
     END
 LIMIT $2
 OFFSET $5;
+
+
+-- name: SearchPosts :many
+SELECT p.id, p.created_at, p.updated_at, p.title, p.url, 
+       p.description, p.published_at, p.feed_id, f.name as feed_name
+FROM posts p
+JOIN feed_follows ff ON p.feed_id = ff.feed_id
+JOIN feeds f ON p.feed_id = f.id
+WHERE ff.user_id = $1
+  AND (
+    p.title ILIKE '%' || $2 || '%' 
+    OR p.description ILIKE '%' || $2 || '%'
+    OR f.name ILIKE '%' || $2 || '%'
+  )
+ORDER BY p.published_at DESC
+LIMIT $3;
