@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
@@ -493,4 +494,57 @@ func filterPostsByField(posts []database.SearchPostsRow, query string, field str
 	}
 
 	return filtered
+}
+
+
+func TUIHandler(s *State, cmd Command, user database.User) error {
+	
+
+	// Default Values
+	limit := 100
+	sortParam := "published_at_desc"
+	FeedFilter := ""
+
+	// Parse flag if provided
+	if len(cmd.Args) > 0 {
+		flags, err := ParseBrowseFlags(cmd.Args)
+		if err != nil{
+			return err
+		}
+		limit = flags.Limit
+		if limit < 10 {
+			limit = 100
+		}
+
+		sortParam = flags.SortBy + "_" + flags.Order
+		FeedFilter = flags.FeedFilter
+	}
+
+
+	// fetch posts
+	posts, err := s.Db.GetPostsForUserSorted(context.Background(), database.GetPostsForUserSortedParams{
+		UserID: user.ID,
+		Limit: int32(limit),
+		Column3: FeedFilter,
+		Column4: sortParam,		
+		Offset: 0 ,
+	} )
+	if err != nil{
+		return  fmt.Errorf("couldn't get post %w",err)
+	}
+
+	if len(posts) == 0 {
+		fmt.Println("No posts found. Try following some feeds first")
+		return nil
+	}
+
+	// Create and run the TUI
+	model := NewTUI(posts)
+	p := tea.NewProgram(model, tea.WithAltScreen())
+
+	if _, err = p.Run(); err != nil{
+		return fmt.Errorf("error running TUI : %w",err)
+	}
+	
+	return nil
 }

@@ -54,7 +54,7 @@ func parseIntFlag(args []string, i int, flagName string, shortFlag string) (int,
 // Handles sorting,filtering and Paginatio 
 func ParseBrowseFlags(args []string)(*BrowseFlags, error){
 	flags := &BrowseFlags{
-		Limit: 2,
+		Limit: 5,
 		SortBy: "published_at",
 		Order: "desc",
 		FeedFilter: "",

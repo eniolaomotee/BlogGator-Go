@@ -54,7 +54,8 @@ func main(){
 	cmds.Register("unfollow", config.ArgumentValidationMiddleware(config.MiddlewareLoggedIn(config.UnfollowHandler),1))
 	cmds.Register("browse", config.MiddlewareLoggedIn(config.BrowseHandler))
 	cmds.Register("user", config.MiddlewareLoggedIn(config.CurrentUserHandler))
-	cmds.Register("search", config.SearchHandler)
+	cmds.Register("search", config.MiddlewareLoggedIn(config.SearchHandler))
+	cmds.Register("tui", config.MiddlewareLoggedIn(config.TUIHandler))
 
 
 	// Parse Args
