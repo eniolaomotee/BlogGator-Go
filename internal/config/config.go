@@ -6,17 +6,49 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/eniolaomotee/BlogGator-Go/api"
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
 )
 
 const configFileName = ".gatorconfig.json"
+
+func ServeHandler(s *State, cmd Command, user database.User)error{
+	port := "8080"
+	if len(cmd.Args) > 0 {
+		port = cmd.Args[0]
+	}
+
+	server := api.NewServer(s.Db)
+
+	log.Printf(" Starting HTTP API server on port %s", port)
+	log.Printf(" API Documentation:")
+	log.Printf("   POST   /api/register       - Register new user")
+	log.Printf("   POST   /api/login          - Login")
+	log.Printf("   GET    /api/posts          - Get posts (auth required)")
+	log.Printf("   GET    /api/feeds          - Get feeds (auth required)")
+	log.Printf("   POST   /api/feeds          - Add feed (auth required)")
+	log.Printf("   POST   /api/feeds/follow   - Follow feed (auth required)")
+	log.Printf("   DELETE /api/feeds/{id}/unfollow - Unfollow feed (auth required)")
+	log.Printf("   GET    /api/me             - Get current user (auth required)")
+	log.Printf("   GET    /api/health         - Health check")
+
+
+	addr := fmt.Sprintf(":%s", port)
+	if err := http.ListenAndServe(addr,server); err != nil{
+		return fmt.Errorf("server error: %w", err)
+	}
+
+
+	return nil
+}
 
 func Read()(Config, error){
 	homeDir, err := os.UserHomeDir()
@@ -90,17 +122,34 @@ func HandlerLogin(s *State, cmd Command, user database.User) error {
 // Register User
 func RegisterHandler(s *State, cmd Command) error{
 
-	username := cmd.Args[0]
-
-	if username == ""{
-		return  fmt.Errorf("username can't be empty")
+	if len(cmd.Args) < 1 {
+		return fmt.Errorf("usage: register <username> [password]")
 	}
 
-	user, err := s.Db.CreateUser(context.Background(), database.CreateUserParams{
-		ID:  uuid.New(),
+	username := cmd.Args[0]
+	// adding password in password handler
+	password := ""
+
+	// If password provided, use it ; otherwise generate something random
+	if len(cmd.Args) > 1 {
+		password = cmd.Args[1]
+	} else {
+		// for our CLI, we can skip or generate a random one
+		password = "cli-user-" + uuid.New().String()[:8]
+	} 
+
+	// Hash password
+	passwordHash, err := api.Hashpassword(password)
+	if err != nil{
+		return  fmt.Errorf("error hashing password: %w", err)
+	}
+
+	user, err := s.Db.CreateUserWithPassword(context.Background(),database.CreateUserWithPasswordParams{
+		ID: uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Name: username,
+		PasswordHash: passwordHash,
 	})
 	if err != nil{
 		if strings.Contains(err.Error(), "duplicate key value"){
@@ -113,8 +162,11 @@ func RegisterHandler(s *State, cmd Command) error{
 		return fmt.Errorf("error setting username")
 	}
 
-	fmt.Printf("User created successfully\n")
+	fmt.Printf("User %s created successfully\n",user.Name)
 	fmt.Printf("User's data is %q", user)
+	if len(cmd.Args) == 1{
+		fmt.Printf("Generated password: %s (save this for api access)", password)
+	}
 
 	return nil
 }

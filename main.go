@@ -56,6 +56,7 @@ func main(){
 	cmds.Register("user", config.MiddlewareLoggedIn(config.CurrentUserHandler))
 	cmds.Register("search", config.MiddlewareLoggedIn(config.SearchHandler))
 	cmds.Register("tui", config.MiddlewareLoggedIn(config.TUIHandler))
+	cmds.Register("serve", config.MiddlewareLoggedIn(config.ServeHandler))
 
 
 	// Parse Args
