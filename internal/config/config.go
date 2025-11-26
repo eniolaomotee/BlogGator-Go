@@ -16,12 +16,14 @@ import (
 	"github.com/eniolaomotee/BlogGator-Go/api"
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 )
 
 const configFileName = ".gatorconfig.json"
 
 func ServeHandler(s *State, cmd Command, user database.User)error{
-	port := "8080"
+	godotenv.Load()
+	port := os.Getenv("PORT")
 	if len(cmd.Args) > 0 {
 		port = cmd.Args[0]
 	}
