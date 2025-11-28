@@ -32,7 +32,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request){
 	s.router.ServeHTTP(w,r)
 }
 
-// Handler
+// Handlers
 func (s *Server) handleRegister (w http.ResponseWriter, r *http.Request){
 	var req RegisterRequest
 
@@ -55,6 +55,9 @@ func (s *Server) handleRegister (w http.ResponseWriter, r *http.Request){
 
 	// Create user
 	user, err := s.db.CreateUserWithPassword(context.Background(),database.CreateUserWithPasswordParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name: req.Username,
 		PasswordHash: passwordHash,
 	})
