@@ -37,4 +37,7 @@ type FeedResponse struct{
 	CreatedAt string `json:"created_at"`
 }
 
-// type Request struct 
+type Request struct {
+	Name string `json:"name"`
+	URL string `json:"url"`
+}

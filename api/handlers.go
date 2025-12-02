@@ -234,6 +234,8 @@ func (s *Server) handleAddFeed(w http.ResponseWriter, r *http.Request){
 
 	// Create feed to add to DB
 	feed, err := s.db.CreateFeed(context.Background(),database.CreateFeedParams{
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name: req.Name,
 		Url: req.URL,
 		UserID: user.ID,
