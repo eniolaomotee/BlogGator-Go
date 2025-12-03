@@ -17,12 +17,14 @@ import (
 type Server struct {
 	db *database.Queries
 	router *chi.Mux
+	jwtSecret string
 }
 
-func NewServer(db *database.Queries) *Server{
+func NewServer(db *database.Queries, secret string) *Server{
 	s := &Server{
 		db: db,
 		router: chi.NewRouter(),
+		jwtSecret: secret,
 	}
 	s.setupRoutes()
 	return s
@@ -71,7 +73,7 @@ func (s *Server) handleRegister (w http.ResponseWriter, r *http.Request){
 	}
 
 	// Generate JWT
-	userJwt, err := GenerateJWT(user.ID.String(), user.Name)
+	userJwt, err := GenerateJWT(user.ID.String(), user.Name, s.jwtSecret)
 	if err != nil{
 		respondWithError(w, http.StatusInternalServerError, "error generating token")
 	}
@@ -111,7 +113,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request){
 	}
 
 	//generate JWT
-	token, err := GenerateJWT(user.ID.String(), user.Name)
+	token, err := GenerateJWT(user.ID.String(), user.Name, s.jwtSecret)
 	if err != nil{
 		respondWithError(w, http.StatusInternalServerError, "error generating token")
 		return

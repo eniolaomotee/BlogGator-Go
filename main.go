@@ -14,6 +14,7 @@ import (
 
 
 func main(){
+
 	// Read config
 	cfg, err := config.Read()
 	if err != nil{

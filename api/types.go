@@ -1,5 +1,7 @@
 package api
 
+import "github.com/golang-jwt/jwt/v5"
+
 // Request/ Response Types
 type RegisterRequest struct{
 	Username string `json:"username"`
@@ -40,4 +42,10 @@ type FeedResponse struct{
 type Request struct {
 	Name string `json:"name"`
 	URL string `json:"url"`
+}
+
+type Claims struct{
+	UserId string `json:"user_id"`
+	UserName string `json:"username"`
+	jwt.RegisteredClaims
 }

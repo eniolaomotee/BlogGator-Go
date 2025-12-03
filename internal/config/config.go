@@ -28,7 +28,12 @@ func ServeHandler(s *State, cmd Command, user database.User)error{
 		port = cmd.Args[0]
 	}
 
-	server := api.NewServer(s.Db)
+	jwtSecret := os.Getenv("SECRET_KEY")
+	if jwtSecret == ""{
+		log.Fatalf("SECRET KEY env variable missing")
+	}
+
+	server := api.NewServer(s.Db,jwtSecret)
 
 	log.Printf(" Starting HTTP API server on port %s", port)
 	log.Printf(" API Documentation:")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -13,23 +12,14 @@ import (
 func (s *Server) AuthMiddleware (next http.Handler) http.Handler{
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Get token from header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == ""{
-			respondWithError(w, http.StatusUnauthorized,"Missing authorization header")
-			return
+		token, err := GetBearerToken(r.Header)
+		if err != nil{
+			respondWithError(w, http.StatusInternalServerError, "error getting bearer token")
+			return 
 		}
-
-		// Bearer token check 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer"{
-			respondWithError(w, http.StatusUnauthorized, "Invalid authorization header format")
-			return
-		}
-
-		token := parts[1]
 
 		//Validate JWT
-		claims, err := ValidateJWT(token)
+		claims, err := ValidateJWT(token, s.jwtSecret)
 		if err != nil{
 			respondWithError(w,http.StatusUnauthorized, "Invalid or expired token")
 			return
