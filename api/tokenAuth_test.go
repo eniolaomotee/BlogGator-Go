@@ -5,12 +5,11 @@ import (
 	"testing"
 )
 
-
-func TestBearerGetToken(t *testing.T){
-	tests := []struct{
-		name string
-		header http.Header
-		want string
+func TestBearerGetToken(t *testing.T) {
+	tests := []struct {
+		name      string
+		header    http.Header
+		want      string
 		wantedErr bool
 	}{
 		{
@@ -18,12 +17,12 @@ func TestBearerGetToken(t *testing.T){
 			header: http.Header{
 				"Authorization": []string{"Bearer validate123"},
 			},
-			want: "validate123",
+			want:      "validate123",
 			wantedErr: false,
-		},{
-			name: "missing authorization header",
-			header: http.Header{},
-			want: "",
+		}, {
+			name:      "missing authorization header",
+			header:    http.Header{},
+			want:      "",
 			wantedErr: true,
 		},
 		{
@@ -31,7 +30,7 @@ func TestBearerGetToken(t *testing.T){
 			header: http.Header{
 				"Authorization": []string{"Token validate123"},
 			},
-			want: "",
+			want:      "",
 			wantedErr: true,
 		},
 		{
@@ -39,18 +38,18 @@ func TestBearerGetToken(t *testing.T){
 			header: http.Header{
 				"Authorization": []string{"Bearervalidate123"},
 			},
-			want: "",
+			want:      "",
 			wantedErr: true,
 		},
 	}
 
-	for _, test := range tests{
+	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := GetBearerToken(test.header)
-			if (err != nil) != test.wantedErr{
+			if (err != nil) != test.wantedErr {
 				t.Fatalf("Expected error: %v, got: %v", test.wantedErr, err)
 			}
-			if got != test.want{
+			if got != test.want {
 				t.Fatalf("Expected token: %s, got %s", test.want, got)
 			}
 		})

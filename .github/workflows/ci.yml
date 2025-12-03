@@ -12,7 +12,7 @@ jobs:
 
         steps:
             - name: checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: setup go
               uses: actions/setup-go@v5
@@ -22,3 +22,24 @@ jobs:
             - name: Test
               run: go test ./... -cover
 
+    style:
+        name: styling
+        runs-on: ubuntu-latest
+
+        steps: 
+            - name: checkout code
+              uses: actions/checkout@v6
+            
+            - name: Setup Go
+              uses: actions/setup-go@v6
+              with:
+                go-version: "1.25.2"
+            - run: go version
+            
+            - name: Code formatting
+              run: test -z $(go fmt ./...)
+
+            - name: Linter
+              uses: dominikh/staticcheck-action@v1
+              with: 
+                version: latest

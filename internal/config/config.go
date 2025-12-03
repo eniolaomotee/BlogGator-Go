@@ -21,7 +21,7 @@ import (
 
 const configFileName = ".gatorconfig.json"
 
-func ServeHandler(s *State, cmd Command, user database.User)error{
+func ServeHandler(s *State, cmd Command, user database.User) error {
 	godotenv.Load()
 	port := os.Getenv("PORT")
 	if len(cmd.Args) > 0 {
@@ -29,11 +29,11 @@ func ServeHandler(s *State, cmd Command, user database.User)error{
 	}
 
 	jwtSecret := os.Getenv("SECRET_KEY")
-	if jwtSecret == ""{
+	if jwtSecret == "" {
 		log.Fatalf("SECRET KEY env variable missing")
 	}
 
-	server := api.NewServer(s.Db,jwtSecret)
+	server := api.NewServer(s.Db, jwtSecret)
 
 	log.Printf(" Starting HTTP API server on port %s", port)
 	log.Printf(" API Documentation:")
@@ -47,68 +47,65 @@ func ServeHandler(s *State, cmd Command, user database.User)error{
 	log.Printf("   GET    /api/me             - Get current user (auth required)")
 	log.Printf("   GET    /api/health         - Health check")
 
-
 	addr := fmt.Sprintf(":%s", port)
-	if err := http.ListenAndServe(addr,server); err != nil{
+	if err := http.ListenAndServe(addr, server); err != nil {
 		return fmt.Errorf("server error: %w", err)
 	}
-
 
 	return nil
 }
 
-func Read()(Config, error){
+func Read() (Config, error) {
 	homeDir, err := os.UserHomeDir()
-	if err != nil{
+	if err != nil {
 		return Config{}, fmt.Errorf("error getting home directory: %v", err)
 	}
 
 	filePath := filepath.Join(homeDir, configFileName)
-	
+
 	data, err := os.ReadFile(filePath)
-	if err != nil{
+	if err != nil {
 		return Config{}, fmt.Errorf("error reading file: %v", err)
 	}
 
 	var conf Config
-	
+
 	err = json.Unmarshal(data, &conf)
-	if err != nil{
-		return Config{}, fmt.Errorf("couldn't unmarshall data : %v",err)
+	if err != nil {
+		return Config{}, fmt.Errorf("couldn't unmarshall data : %v", err)
 	}
 
-	return conf,nil
+	return conf, nil
 }
 
 // Set User
-func  (cfg *Config) SetUser (user string) error{
+func (cfg *Config) SetUser(user string) error {
 	cfg.UserName = user
-	
+
 	data, err := json.Marshal(cfg)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("error marshalling Json: %v", err)
 	}
-	
+
 	homeDir, err := os.UserHomeDir()
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("error getting home directory: %v", err)
 	}
-	
+
 	path := filepath.Join(homeDir, configFileName)
-	
+
 	err = os.WriteFile(path, data, 0644)
-	if err != nil{
-		return fmt.Errorf("error writing to config %v",err)
+	if err != nil {
+		return fmt.Errorf("error writing to config %v", err)
 	}
 
 	return nil
 }
 
-
 // login function handler
 func HandlerLogin(s *State, cmd Command, user database.User) error {
 
-	if len(cmd.Args) < 1{
+	if len(cmd.Args) < 1 {
 		return fmt.Errorf("username required")
 	}
 	username := cmd.Args[0]
@@ -117,17 +114,16 @@ func HandlerLogin(s *State, cmd Command, user database.User) error {
 		return fmt.Errorf("username can't be empty")
 	}
 
-
-	if err := s.Conf.SetUser(username); err != nil{
+	if err := s.Conf.SetUser(username); err != nil {
 		return fmt.Errorf("error setting username")
 	}
 
-	fmt.Printf("set current user to %q\n",username)
-	return  nil
+	fmt.Printf("set current user to %q\n", username)
+	return nil
 }
 
 // Register User
-func RegisterHandler(s *State, cmd Command) error{
+func RegisterHandler(s *State, cmd Command) error {
 
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("usage: register <username> [password]")
@@ -143,35 +139,35 @@ func RegisterHandler(s *State, cmd Command) error{
 	} else {
 		// for our CLI, we can skip or generate a random one
 		password = "cli-user-" + uuid.New().String()[:8]
-	} 
+	}
 
 	// Hash password
 	passwordHash, err := api.Hashpassword(password)
-	if err != nil{
-		return  fmt.Errorf("error hashing password: %w", err)
+	if err != nil {
+		return fmt.Errorf("error hashing password: %w", err)
 	}
 
-	user, err := s.Db.CreateUserWithPassword(context.Background(),database.CreateUserWithPasswordParams{
-		ID: uuid.New(),
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		Name: username,
+	user, err := s.Db.CreateUserWithPassword(context.Background(), database.CreateUserWithPasswordParams{
+		ID:           uuid.New(),
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+		Name:         username,
 		PasswordHash: passwordHash,
 	})
-	if err != nil{
-		if strings.Contains(err.Error(), "duplicate key value"){
-			return  fmt.Errorf("user already exists")
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value") {
+			return fmt.Errorf("user already exists")
 		}
 		return fmt.Errorf("error creating user : %v", err)
 	}
 
-	if err := s.Conf.SetUser(user.Name); err != nil{
+	if err := s.Conf.SetUser(user.Name); err != nil {
 		return fmt.Errorf("error setting username")
 	}
 
-	fmt.Printf("User %s created successfully\n",user.Name)
+	fmt.Printf("User %s created successfully\n", user.Name)
 	fmt.Printf("User's data is %q", user)
-	if len(cmd.Args) == 1{
+	if len(cmd.Args) == 1 {
 		fmt.Printf("Generated password: %s (save this for api access)", password)
 	}
 
@@ -179,29 +175,29 @@ func RegisterHandler(s *State, cmd Command) error{
 }
 
 // Reset User DB
-func ResetHandler(s *State, cmd Command) error{
+func ResetHandler(s *State, cmd Command) error {
 
 	err := s.Db.DeleteUser(context.Background())
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("error deleting all users : %v", err)
 	}
 
 	return nil
 }
 
-// Get All users and show current User 
-func GetAllUsersHandler(s *State, cmd Command) error{
+// Get All users and show current User
+func GetAllUsersHandler(s *State, cmd Command) error {
 	users, err := s.Db.GetUsers(context.Background())
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("error getting all users: %v", err)
 	}
 
 	currentUser := s.Conf.UserName
 
-	for _, user := range users{
-		if user.Name == currentUser{
-			fmt.Printf("* %s (current)\n",user.Name)
-		}else{
+	for _, user := range users {
+		if user.Name == currentUser {
+			fmt.Printf("* %s (current)\n", user.Name)
+		} else {
 			fmt.Printf("* %s\n", user.Name)
 		}
 	}
@@ -210,28 +206,28 @@ func GetAllUsersHandler(s *State, cmd Command) error{
 }
 
 // run Handler
-func (c *Commands) Run (s *State, cmd Command)error{
+func (c *Commands) Run(s *State, cmd Command) error {
 	// commands.run: look up handler by cmd.Name; if missing, return an error; otherwise call handler(s, cmd) and return its error.
 
 	command, ok := c.CliCommands[cmd.Name]
-	if !ok{
+	if !ok {
 		return fmt.Errorf("unknown command: %s", cmd.Name)
-	}else{
+	} else {
 		return command(s, cmd)
 	}
 }
 
 // Register Handler
-func (c *Commands) Register (name string, f func(*State, Command)error) error{
-	if name == ""{
+func (c *Commands) Register(name string, f func(*State, Command) error) error {
+	if name == "" {
 		return fmt.Errorf("name cannot be empty")
 	}
 
-	if f == nil{
-		return  fmt.Errorf("handler cannot be nil")
+	if f == nil {
+		return fmt.Errorf("handler cannot be nil")
 	}
 
-	if c.CliCommands == nil{
+	if c.CliCommands == nil {
 		c.CliCommands = make(map[string]func(*State, Command) error)
 	}
 
@@ -241,44 +237,41 @@ func (c *Commands) Register (name string, f func(*State, Command)error) error{
 
 }
 
-
-func CurrentUserHandler(s *State, cmd Command, user database.User)error{
-	fmt.Printf("The current user is %s and was created at %s",user.Name, user.CreatedAt)
+func CurrentUserHandler(s *State, cmd Command, user database.User) error {
+	fmt.Printf("The current user is %s and was created at %s", user.Name, user.CreatedAt)
 	return nil
 }
 
-func AddFeedHandler(s *State, cmd Command, user database.User) error{
+func AddFeedHandler(s *State, cmd Command, user database.User) error {
 
 	Name := cmd.Args[0]
 	UrlP := cmd.Args[1]
 
 	feed, err := s.Db.CreateFeed(context.Background(), database.CreateFeedParams{
-		ID: uuid.New(),	
+		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		Name: Name,
-		UserID: user.ID,
-		Url: UrlP,
-
-		
+		Name:      Name,
+		UserID:    user.ID,
+		Url:       UrlP,
 	})
-	if err != nil{
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint"){
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			return fmt.Errorf("duplicate posts")
 		}
-		return  fmt.Errorf("error creating feed : %s", err)
+		return fmt.Errorf("error creating feed : %s", err)
 	}
 
-	feedFollow, err := s.Db.CreateFeedFollow(context.Background(),database.CreateFeedFollowParams{
+	feedFollow, err := s.Db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		FeedID: feed.ID,
 		UserID: user.ID,
 	})
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("couldn't create feed follow: %w", err)
 	}
 
 	fmt.Printf("Feed created successfully\n")
-	fmt.Printf("feed is %v\n, user is %s\n", feed,user)
+	fmt.Printf("feed is %v\n, user is %s\n", feed, user)
 	fmt.Printf("Feed followed successfully\n")
 	fmt.Printf("username: %s\n, feedname: %s\n", feedFollow.UserName, feedFollow.FeedName)
 	fmt.Println("=====================================")
@@ -286,22 +279,21 @@ func AddFeedHandler(s *State, cmd Command, user database.User) error{
 	return nil
 }
 
-
-func GetAllFeeds(s *State, cmd Command) error{
+func GetAllFeeds(s *State, cmd Command) error {
 
 	feeds, err := s.Db.GetFeeds(context.Background())
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("error getting feeds : %s", err)
 	}
 
-	if len(feeds) == 0{
+	if len(feeds) == 0 {
 		fmt.Println("No feeds found")
-		return  nil
+		return nil
 	}
 
-	for _, feed := range feeds{
-		username, err := s.Db.GetUserFeed(context.Background(),feed.ID)
-		if err != nil{
+	for _, feed := range feeds {
+		username, err := s.Db.GetUserFeed(context.Background(), feed.ID)
+		if err != nil {
 			return fmt.Errorf("error getting user feed")
 
 		}
@@ -313,16 +305,15 @@ func GetAllFeeds(s *State, cmd Command) error{
 
 }
 
-func FollowHandler(s *State, cmd Command, user database.User) error{
+func FollowHandler(s *State, cmd Command, user database.User) error {
 
 	url := cmd.Args[0]
-	if url == ""{
-		return  fmt.Errorf("please enter a URL")
+	if url == "" {
+		return fmt.Errorf("please enter a URL")
 	}
 
-
-	feed, err := s.Db.GetFeedByURL(context.Background(),url)
-	if err != nil{
+	feed, err := s.Db.GetFeedByURL(context.Background(), url)
+	if err != nil {
 		return fmt.Errorf("couldn't get feed by URL %w", err)
 	}
 
@@ -330,7 +321,7 @@ func FollowHandler(s *State, cmd Command, user database.User) error{
 		FeedID: feed.ID,
 		UserID: user.ID,
 	})
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("couldn't create follow feed %w", err)
 	}
 
@@ -341,11 +332,11 @@ func FollowHandler(s *State, cmd Command, user database.User) error{
 
 }
 
-func FeedFollowingHandler(s *State, cmd Command, user database.User) error{
+func FeedFollowingHandler(s *State, cmd Command, user database.User) error {
 
 	feedForUser, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
-	if err != nil{
-		return fmt.Errorf("couldn't get feed follows for user %w",err)
+	if err != nil {
+		return fmt.Errorf("couldn't get feed follows for user %w", err)
 	}
 
 	if len(feedForUser) == 0 {
@@ -359,17 +350,15 @@ func FeedFollowingHandler(s *State, cmd Command, user database.User) error{
 	}
 	fmt.Println("=====================================")
 
-
-	return  nil
+	return nil
 }
-
 
 func UnfollowHandler(s *State, cmd Command, user database.User) error {
 
 	url := cmd.Args[0]
 
 	urlP, err := s.Db.GetFeedByURL(context.Background(), url)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("couldn't get feed from URL %s", err)
 	}
 
@@ -377,49 +366,48 @@ func UnfollowHandler(s *State, cmd Command, user database.User) error {
 		UserID: user.ID,
 		FeedID: urlP.ID,
 	})
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("error unfollowing user : %s", err)
 	}
 
 	return nil
 }
 
-
-func ScrapeFeeds(s *State, feed database.Feed)error {
+func ScrapeFeeds(s *State, feed database.Feed) error {
 
 	err := s.Db.MarkFeedFetched(context.Background(), feed.ID)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("couldn't mark feed as fetched: %s", err)
 	}
 
 	feeds, err := fetchFeed(context.Background(), feed.Url)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("couldn't fetch feed with this URL: %s", err)
 	}
 
 	for _, item := range feeds.Channel.Item {
 		PublishedAt := sql.NullTime{}
-		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate); 
-		if err == nil{
+		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err == nil {
 			PublishedAt = sql.NullTime{
-				Time: pubDate,
+				Time:  pubDate,
 				Valid: true,
 			}
 		}
 		_, err = s.Db.CreatePost(context.Background(), database.CreatePostParams{
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
-			Title: item.Title,
+			Title:     item.Title,
 			Description: sql.NullString{
 				String: item.Description,
-				Valid: true,
+				Valid:  true,
 			},
 			PublishedAt: PublishedAt,
-			Url: item.Link,
-			FeedID: feed.ID,
+			Url:         item.Link,
+			FeedID:      feed.ID,
 		})
-		if err != nil{
-			if strings.Contains(err.Error(), "duplicate key value violates unique constraint"){
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 				continue
 			}
 			fmt.Printf("Error creating posts :%s", err)
@@ -428,59 +416,57 @@ func ScrapeFeeds(s *State, feed database.Feed)error {
 	}
 
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feeds.Channel.Item))
-	return  nil
+	return nil
 }
 
-func displayPosts(posts []database.GetPostsForUserSortedRow, username string){
-	fmt.Printf("Found %d posts for user %s:\n",len(posts),username)
-	for _, post := range posts{
+func displayPosts(posts []database.GetPostsForUserSortedRow, username string) {
+	fmt.Printf("Found %d posts for user %s:\n", len(posts), username)
+	for _, post := range posts {
 		fmt.Printf("%s from %s\n", post.PublishedAt.Time.Format("Mon Jan 2"), post.FeedName)
 		fmt.Printf("---- %s-----", post.Title)
-		fmt.Printf("    %v\n",post.Description.String)
+		fmt.Printf("    %v\n", post.Description.String)
 		fmt.Printf("Link: %s\n", post.Url)
 		fmt.Println("=====================================")
 	}
 }
 
-
-func BrowseHandler(s *State, cmd Command , user database.User)error{
+func BrowseHandler(s *State, cmd Command, user database.User) error {
 	// Parse flags
 	flags, err := ParseBrowseFlags(cmd.Args)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	// Calculate offset based on page number
 	// Page 1 = offset 0, Page 2 = offset (limit), Page 3 = offset (2*limit), etc.
 	offset := (flags.Page - 1) * flags.Limit
-	
+
 	sortParam := flags.SortBy + "_" + flags.Order
 
-
 	posts, err := s.Db.GetPostsForUserSorted(context.Background(), database.GetPostsForUserSortedParams{
-		UserID: user.ID,
-		Limit: int32(flags.Limit),
+		UserID:  user.ID,
+		Limit:   int32(flags.Limit),
 		Column3: flags.FeedFilter,
 		Column4: sortParam,
-		Offset: int32(offset),
+		Offset:  int32(offset),
 	})
-	if err != nil{
-		return fmt.Errorf("couldn't get posts for user: %w",err)
+	if err != nil {
+		return fmt.Errorf("couldn't get posts for user: %w", err)
 	}
 
-	if flags.FeedFilter != ""{
+	if flags.FeedFilter != "" {
 		filtered := []database.GetPostsForUserSortedRow{}
-		for _, post := range posts{
-			if strings.Contains(strings.ToLower(post.FeedName), strings.ToLower(flags.FeedFilter)){
+		for _, post := range posts {
+			if strings.Contains(strings.ToLower(post.FeedName), strings.ToLower(flags.FeedFilter)) {
 				filtered = append(filtered, post)
 			}
 		}
 		posts = filtered
 	}
-	
-	displayPosts(posts,user.Name)
 
-	return  nil
+	displayPosts(posts, user.Name)
+
+	return nil
 
 }
 
@@ -496,9 +482,9 @@ func SearchHandler(s *State, cmd Command, user database.User) error {
 		UserID: user.ID,
 		Column2: sql.NullString{
 			String: flags.Query,
-			Valid: true,
+			Valid:  true,
 		},
-		Limit:  int32(flags.Limit),
+		Limit: int32(flags.Limit),
 	})
 	if err != nil {
 		return fmt.Errorf("couldn't search posts: %w", err)
@@ -555,9 +541,7 @@ func filterPostsByField(posts []database.SearchPostsRow, query string, field str
 	return filtered
 }
 
-
 func TUIHandler(s *State, cmd Command, user database.User) error {
-	
 
 	// Default Values
 	limit := 100
@@ -567,7 +551,7 @@ func TUIHandler(s *State, cmd Command, user database.User) error {
 	// Parse flag if provided
 	if len(cmd.Args) > 0 {
 		flags, err := ParseBrowseFlags(cmd.Args)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		limit = flags.Limit
@@ -579,17 +563,16 @@ func TUIHandler(s *State, cmd Command, user database.User) error {
 		FeedFilter = flags.FeedFilter
 	}
 
-
 	// fetch posts
 	posts, err := s.Db.GetPostsForUserSorted(context.Background(), database.GetPostsForUserSortedParams{
-		UserID: user.ID,
-		Limit: int32(limit),
+		UserID:  user.ID,
+		Limit:   int32(limit),
 		Column3: FeedFilter,
-		Column4: sortParam,		
-		Offset: 0 ,
-	} )
-	if err != nil{
-		return  fmt.Errorf("couldn't get post %w",err)
+		Column4: sortParam,
+		Offset:  0,
+	})
+	if err != nil {
+		return fmt.Errorf("couldn't get post %w", err)
 	}
 
 	if len(posts) == 0 {
@@ -601,9 +584,9 @@ func TUIHandler(s *State, cmd Command, user database.User) error {
 	model := NewTUI(posts)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
-	if _, err = p.Run(); err != nil{
-		return fmt.Errorf("error running TUI : %w",err)
+	if _, err = p.Run(); err != nil {
+		return fmt.Errorf("error running TUI : %w", err)
 	}
-	
+
 	return nil
 }

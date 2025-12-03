@@ -9,11 +9,10 @@ import (
 	"net/http"
 )
 
-func fetchFeed(ctx context.Context, feedURL string)(*RSSFeed, error){
+func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
-
-	req, err := http.NewRequestWithContext(ctx,"GET",feedURL, nil)
-	if err != nil{
+	req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
+	if err != nil {
 		return nil, fmt.Errorf("error creating request %w", err)
 	}
 
@@ -21,11 +20,11 @@ func fetchFeed(ctx context.Context, feedURL string)(*RSSFeed, error){
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil{
+	if err != nil {
 		return nil, fmt.Errorf("error sending request %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK{
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status: %d %s", resp.StatusCode, resp.Status)
 
 	}
@@ -33,14 +32,14 @@ func fetchFeed(ctx context.Context, feedURL string)(*RSSFeed, error){
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
-	if err != nil{
+	if err != nil {
 		return nil, fmt.Errorf("error reading data from response %w", err)
 	}
 
 	var rss RSSFeed
 
 	err = xml.Unmarshal(data, &rss)
-	if err != nil{
+	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling xml %w", err)
 	}
 
@@ -54,7 +53,6 @@ func fetchFeed(ctx context.Context, feedURL string)(*RSSFeed, error){
 
 	rss.Channel.Description = channel_desc
 	rss.Channel.Title = channel_title
-	
 
 	return &rss, nil
 
