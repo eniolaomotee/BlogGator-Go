@@ -21,7 +21,7 @@ import (
 
 const configFileName = ".gatorconfig.json"
 
-func ServeHandler(s *State, cmd Command, user database.User) error {
+func ServeHandler(s *State, cmd Command) error {
 	godotenv.Load()
 	port := os.Getenv("PORT")
 	if len(cmd.Args) > 0 {

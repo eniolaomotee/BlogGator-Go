@@ -48,7 +48,18 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Hash Password
+	//Check if user exists
+	_, err := s.db.GetUserByName(context.Background(), req.Username)
+	if err == nil {
+		respondWithError(w, http.StatusConflict, "Username already exists, please login instead")
+		return
+	}
+	if err != sql.ErrNoRows {
+		respondWithError(w, http.StatusInternalServerError, "Error checking username")
+		return
+	}
+
+	//Hash Password if user doesn't exist
 	passwordHash, err := Hashpassword(req.Password)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error hashing Password")
@@ -64,22 +75,18 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: passwordHash,
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			respondWithError(w, http.StatusConflict, "Username already exists")
-			return
-		}
 		respondWithError(w, http.StatusInternalServerError, "error creating user")
 		return
 	}
 
 	// Generate JWT
-	userJwt, err := GenerateJWT(user.ID.String(), user.Name, s.jwtSecret)
+	token, err := GenerateJWT(user.ID.String(), user.Name, s.jwtSecret)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error generating token")
 	}
 
 	respondWithJson(w, http.StatusCreated, AuthResponse{
-		Token:    userJwt,
+		Token:    token,
 		UserID:   user.ID.String(),
 		Username: user.Name,
 	})
@@ -99,6 +106,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			respondWithError(w, http.StatusUnauthorized, "Invalid credentials")
+			return
 		}
 		respondWithError(w, http.StatusInternalServerError, "error getting user")
 		return
@@ -132,6 +140,7 @@ func (s *Server) handleGetPosts(w http.ResponseWriter, r *http.Request) {
 	user, ok := u.(database.User)
 	if !ok {
 		respondWithError(w, http.StatusBadRequest, "user not found")
+		return
 	}
 
 	// parse query params

@@ -52,9 +52,19 @@ func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
 // CORS middleware
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT, DELETE,OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+		reqOrigin := r.Header.Get("Origin")
+
+		allowOrigin := "*"
+		if reqOrigin != "" {
+			allowOrigin = reqOrigin
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+		// Also set the non-standard variant in case another layer expects it (debug)
+		w.Header().Set("Access-Control-Origin", allowOrigin)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.gator.aggregator</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/path/to/gator</string>
+        <string>service</string>
+        <string>start</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <true/>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/%YOUR_USERNAME%/.gator/logs/gator-service.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/%YOUR_USERNAME%/.gator/logs/gator-service-error.log</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>DB_URL</key>
+        <string>postgres://username:password@localhost:5432/gator?sslmode=disable</string>
+    </dict>
+</dict>
+</plist>
