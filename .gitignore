@@ -1,3 +1,12 @@
 env
 .env
 handler-test.go
+DEPLOYMENT.md
+docker-compose.yml
+Dockerfile.backend
+FRONTEND_SETUP.md
+PROJECT_INDEX.md
+QUICK_REFERENCE.md
+SETUP_COMPLETE.md
+TECHNICAL.md
+Dockerfile
