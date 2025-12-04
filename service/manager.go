@@ -405,3 +405,10 @@ func (s *Service) GetInfo() map[string]interface{} {
 
 	return info
 }
+
+func (m *Manager) GetService(name string) (*Service, bool) {
+	m.mu.Lock()
+	defer m.mu.RUnlock()
+	service, exists := m.services[name]
+	return service, exists
+}

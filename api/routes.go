@@ -45,7 +45,7 @@ func (s *Server) setupRoutes() {
 }
 
 func (s *Server) handleGetcurrentUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(database.User)
+	user := r.Context().Value(userContextkey).(database.User)
 
 	respondWithJson(w, http.StatusOK, map[string]string{
 		"id":         user.ID.String(),

@@ -1,0 +1,19 @@
+[Unit]
+Description=Gator RSS Aggregator Service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=%YOUR_USERNAME%
+WorkingDirectory=/home/%YOUR_USERNAME%
+ExecStart=/path/to/gator service start
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables
+Environment="DB_URL=postgres://username:password@localhost:5432/gator?sslmode=disable"
+
+[Install]
+WantedBy=multi-user.target
