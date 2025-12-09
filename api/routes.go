@@ -39,14 +39,13 @@ func (s *Server) setupRoutes() {
 	})
 
 	// Webhook (no auth - Stripe validates)
-   		s.router.Post("/api/webhooks/stripe", s.handleStripeWebhook)
+	s.router.Post("/api/webhooks/stripe", s.handleStripeWebhook)
 
 	//Protected Routes with limits
 	s.router.Group(func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 		r.Use(s.TrackAPIUsage)
 
-		
 		// / API access requires Pro+
 		r.With(s.CheckAPIAccess).Get("/api/posts", s.handleGetPosts)
 
@@ -60,7 +59,7 @@ func (s *Server) setupRoutes() {
 		r.Get("/api/me", s.handleGetcurrentUser)
 
 		//Feed creation has limits
-		r.With(s.CheckFeedLimit).Post("/api/feeds",s.handleAddFeed)
+		r.With(s.CheckFeedLimit).Post("/api/feeds", s.handleAddFeed)
 	})
 }
 
