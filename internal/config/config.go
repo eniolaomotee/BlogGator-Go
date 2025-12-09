@@ -166,7 +166,7 @@ func RegisterHandler(s *State, cmd Command) error {
 	}
 
 	fmt.Printf("User %s created successfully\n", user.Name)
-	fmt.Printf("User's data is %q", user)
+	fmt.Printf("User's data is %v", user)
 	if len(cmd.Args) == 1 {
 		fmt.Printf("Generated password: %s (save this for api access)", password)
 	}
@@ -271,7 +271,7 @@ func AddFeedHandler(s *State, cmd Command, user database.User) error {
 	}
 
 	fmt.Printf("Feed created successfully\n")
-	fmt.Printf("feed is %v\n, user is %s\n", feed, user)
+	fmt.Printf("feed is %v\n, user is %v\n", feed, user)
 	fmt.Printf("Feed followed successfully\n")
 	fmt.Printf("username: %s\n, feedname: %s\n", feedFollow.UserName, feedFollow.FeedName)
 	fmt.Println("=====================================")

@@ -12,6 +12,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
+	github.com/sqlc-dev/pqtype v0.3.0
+	github.com/stripe/stripe-go/v76 v76.25.0
 	golang.org/x/crypto v0.45.0
 )
 

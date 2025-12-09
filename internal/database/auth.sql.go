@@ -56,7 +56,7 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Api
 const createUserWithPassword = `-- name: CreateUserWithPassword :one
 INSERT INTO users (id, created_at, updated_at, name, password_hash)
 VALUES($1,$2,$3,$4,$5)
-RETURNING id, created_at, updated_at, name, password_hash
+RETURNING id, created_at, updated_at, name, password_hash, email
 `
 
 type CreateUserWithPasswordParams struct {
@@ -82,6 +82,7 @@ func (q *Queries) CreateUserWithPassword(ctx context.Context, arg CreateUserWith
 		&i.UpdatedAt,
 		&i.Name,
 		&i.PasswordHash,
+		&i.Email,
 	)
 	return i, err
 }
@@ -157,7 +158,7 @@ func (q *Queries) GetApiKeysForUsers(ctx context.Context, userID uuid.UUID) ([]A
 }
 
 const getUserByName = `-- name: GetUserByName :one
-SELECT id, created_at, updated_at, name, password_hash FROM users WHERE name = $1
+SELECT id, created_at, updated_at, name, password_hash, email FROM users WHERE name = $1
 `
 
 func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) {
@@ -169,6 +170,7 @@ func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) 
 		&i.UpdatedAt,
 		&i.Name,
 		&i.PasswordHash,
+		&i.Email,
 	)
 	return i, err
 }

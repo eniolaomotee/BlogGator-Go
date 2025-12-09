@@ -26,12 +26,29 @@ func (s *Server) setupRoutes() {
 		})
 	})
 
-	//Protected Routes
 	s.router.Group(func(r chi.Router) {
 		r.Use(s.AuthMiddleware)
 
-		// Posts
-		r.Get("/api/posts", s.handleGetPosts)
+		// Subscription management
+		r.Get("/api/billing/subscription", s.handleGetSubscription)
+		r.Post("/api/billing/checkout", s.handleCreateCheckout)
+		r.Post("/api/billing/cancel", s.handleCancelSusbscription)
+		r.Get("/api/billing/tiers", s.handleGetTiers)
+		r.Get("/api/billing/usage", s.handleGetUsage)
+
+	})
+
+	// Webhook (no auth - Stripe validates)
+   		s.router.Post("/api/webhooks/stripe", s.handleStripeWebhook)
+
+	//Protected Routes with limits
+	s.router.Group(func(r chi.Router) {
+		r.Use(s.AuthMiddleware)
+		r.Use(s.TrackAPIUsage)
+
+		
+		// / API access requires Pro+
+		r.With(s.CheckAPIAccess).Get("/api/posts", s.handleGetPosts)
 
 		// Feeds
 		r.Get("/api/feeds", s.handleGetFeeds)
@@ -41,9 +58,55 @@ func (s *Server) setupRoutes() {
 
 		// User Info
 		r.Get("/api/me", s.handleGetcurrentUser)
+
+		//Feed creation has limits
+		r.With(s.CheckFeedLimit).Post("/api/feeds",s.handleAddFeed)
 	})
 }
 
+func (s *Server) handleGetTiers(w http.ResponseWriter, r *http.Request) {
+	tiers, err := s.db.GetAllTiers(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error fetching tiers")
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, tiers)
+}
+
+func (s *Server) handleGetUsage(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(userContextkey).(database.User)
+
+	feedCount, _ := s.db.CountUserFeeds(r.Context(), user.ID)
+	postCount, _ := s.db.CountUserPosts(r.Context(), user.ID)
+	apiCalls, _ := s.db.GetAPIUsageThisMonth(r.Context(), user.ID)
+
+	subscription, err := s.db.GetUserSubscription(r.Context(), user.ID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error retrieving subscription")
+		return
+	}
+
+	tier, err := s.db.GetTierByID(r.Context(), subscription.TierID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error retrieving tier information")
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, map[string]interface{}{
+		"feeds": map[string]interface{}{
+			"current": feedCount,
+			"limit":   tier.MaxFeeds,
+		},
+		"posts": map[string]interface{}{
+			"current": postCount,
+			"limit":   tier.MaxPosts,
+		},
+		"api_calls": map[string]interface{}{
+			"current": apiCalls,
+		},
+	})
+}
 func (s *Server) handleGetcurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(userContextkey).(database.User)
 
