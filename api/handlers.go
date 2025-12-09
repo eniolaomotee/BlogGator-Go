@@ -85,6 +85,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	token, err := GenerateJWT(user.ID.String(), user.Name, s.jwtSecret)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error generating token")
+		return
 	}
 
 	respondWithJson(w, http.StatusCreated, AuthResponse{
@@ -123,6 +124,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	//generate JWT
 	token, err := GenerateJWT(user.ID.String(), user.Name, s.jwtSecret)
 	if err != nil {
+		fmt.Printf("handleLogin: error generating token: %v\n", err)
 		respondWithError(w, http.StatusInternalServerError, "error generating token")
 		return
 	}
@@ -252,6 +254,7 @@ func (s *Server) handleAddFeed(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			respondWithError(w, http.StatusConflict, "Feed already exists")
+			return
 		}
 		respondWithError(w, http.StatusInternalServerError, "unable to create feed")
 		return

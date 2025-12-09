@@ -20,7 +20,17 @@ export default function RootLayout({
         <meta name="color-scheme" content="light dark" />
       </head>
       <body className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100">
-        {children}
+        <header className="w-full border-b bg-white/60 dark:bg-black/40 backdrop-blur sticky top-0 z-30">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <a href="/" className="font-semibold text-lg">BlogGator</a>
+            </div>
+            <div>
+              <a href="/auth" className="text-sm bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded">Sign in</a>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
       </body>
     </html>
   )

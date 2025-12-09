@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [feedName, setFeedName] = useState('')
   const [feedUrl, setFeedUrl] = useState('')
+  const [feedError, setFeedError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'posts' | 'feeds'>('posts')
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function DashboardPage() {
     const token = localStorage.getItem('bg_token')
     if (!token) return
 
+    setFeedError(null)
     try {
       await axios.post(
         `${API_BASE}/api/feeds`,
@@ -86,8 +88,24 @@ export default function DashboardPage() {
       setFeedName('')
       setFeedUrl('')
       fetchData(token)
-    } catch (err) {
+    } catch (err: any) {
+      // axios error handling
+      let message = 'Failed to add feed'
+      if (axios.isAxiosError(err)) {
+        if (err.response && err.response.data) {
+          // backend uses { error: "..." }
+          const data: any = err.response.data
+          if (data.error) message = data.error
+          else if (typeof data === 'string') message = data
+          else message = JSON.stringify(data)
+        } else if (err.message) {
+          message = err.message
+        }
+      } else if (err && err.message) {
+        message = err.message
+      }
       console.error('Failed to add feed:', err)
+      setFeedError(message)
     }
   }
 
@@ -262,6 +280,9 @@ export default function DashboardPage() {
                   Add Feed
                 </button>
               </form>
+              {feedError && (
+                <div className="mt-3 text-sm text-red-600">{feedError}</div>
+              )}
             </div>
 
             {/* Feeds List */}
