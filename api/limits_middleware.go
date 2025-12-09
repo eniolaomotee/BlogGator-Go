@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -15,6 +16,11 @@ func (s *Server) CheckFeedLimit(next http.Handler) http.Handler {
 		// Get user's subscription
 		subscription, err := s.db.GetUserSubscription(context.Background(), user.ID)
 		if err != nil {
+			// if user has no subscription, allow creation (free tier behavior)
+			if err == sql.ErrNoRows {
+				next.ServeHTTP(w, r)
+				return
+			}
 			respondWithError(w, http.StatusInternalServerError, "Error retrieving subscription")
 			return
 		}
