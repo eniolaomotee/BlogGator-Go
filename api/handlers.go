@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eniolaomotee/BlogGator-Go/billing"
 	"github.com/eniolaomotee/BlogGator-Go/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ type Server struct {
 	db        *database.Queries
 	router    *chi.Mux
 	jwtSecret string
+	billing   *billing.StripeService
 }
 
 func NewServer(db *database.Queries, secret string) *Server {

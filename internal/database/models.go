@@ -6,6 +6,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,6 +41,17 @@ type FeedFollow struct {
 	FeedID    uuid.UUID
 }
 
+type Payment struct {
+	ID                    uuid.UUID
+	UserID                uuid.UUID
+	SubscriptionID        uuid.NullUUID
+	AmountCents           int32
+	Currency              string
+	Status                string
+	StripePaymentIntentID sql.NullString
+	CreatedAt             time.Time
+}
+
 type Post struct {
 	ID          uuid.UUID
 	CreatedAt   time.Time
@@ -51,10 +63,46 @@ type Post struct {
 	FeedID      uuid.UUID
 }
 
+type SubscriptionTier struct {
+	ID         uuid.UUID
+	Name       string
+	PriceCents int32
+	MaxFeeds   int32
+	MaxPosts   sql.NullInt32
+	Features   json.RawMessage
+	CreatedAt  time.Time
+}
+
+type UsageMetric struct {
+	ID          uuid.UUID
+	UserID      uuid.UUID
+	MetricType  string
+	Count       int32
+	PeriodStart time.Time
+	PeriodEnd   time.Time
+	CreatedAt   time.Time
+}
+
 type User struct {
 	ID           uuid.UUID
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	Name         string
 	PasswordHash string
+	Email        sql.NullString
+}
+
+type UsersSubscription struct {
+	ID                   uuid.UUID
+	UserID               uuid.UUID
+	TierID               uuid.UUID
+	Status               string
+	CurrentPeriodStart   time.Time
+	CurrentPeriodEnd     time.Time
+	CancelAtEndPeriod    sql.NullBool
+	StripeCustomerID     sql.NullString
+	StripeSubscriptionID sql.NullString
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	Email                sql.NullString
 }
