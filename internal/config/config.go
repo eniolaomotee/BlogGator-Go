@@ -19,7 +19,19 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const configFileName = ".gatorconfig.json"
+func getConfigFilePath() string {
+	configFileName := os.Getenv("GATOR_CONFIG_FILE")
+
+	if configFileName == "" {
+		if home, err := os.UserHomeDir(); err == nil {
+			configFileName = filepath.Join(home, ".gatorconfig.json")
+		} else {
+			configFileName = "/etc/gator/config.json"
+		}
+	}
+
+	return configFileName
+}
 
 func ServeHandler(s *State, cmd Command) error {
 	godotenv.Load()
@@ -56,12 +68,7 @@ func ServeHandler(s *State, cmd Command) error {
 }
 
 func Read() (Config, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return Config{}, fmt.Errorf("error getting home directory: %v", err)
-	}
-
-	filePath := filepath.Join(homeDir, configFileName)
+	filePath := getConfigFilePath()
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -87,12 +94,7 @@ func (cfg *Config) SetUser(user string) error {
 		return fmt.Errorf("error marshalling Json: %v", err)
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("error getting home directory: %v", err)
-	}
-
-	path := filepath.Join(homeDir, configFileName)
+	path := getConfigFilePath()
 
 	err = os.WriteFile(path, data, 0644)
 	if err != nil {
