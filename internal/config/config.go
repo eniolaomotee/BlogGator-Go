@@ -20,17 +20,19 @@ import (
 )
 
 func getConfigFilePath() string {
-	configFileName := os.Getenv("GATOR_CONFIG_FILE")
+    // 1. Priority: The Environment Variable we set
+    configFileName := os.Getenv("GATOR_CONFIG_FILE")
+    if configFileName != "" {
+        return configFileName
+    }
 
-	if configFileName == "" {
-		if home, err := os.UserHomeDir(); err == nil {
-			configFileName = filepath.Join(home, ".gatorconfig.json")
-		} else {
-			configFileName = "/etc/gator/config.json"
-		}
-	}
+    // 2. Fallback: The local home directory (for your Mac)
+    if home, err := os.UserHomeDir(); err == nil {
+        return filepath.Join(home, ".gatorconfig.json")
+    }
 
-	return configFileName
+    // 3. Last resort
+    return "/app/gatorconfig.json" 
 }
 
 func ServeHandler(s *State, cmd Command) error {
@@ -42,7 +44,7 @@ func ServeHandler(s *State, cmd Command) error {
 
 	jwtSecret := os.Getenv("SECRET_KEY")
 	if jwtSecret == "" {
-		log.Fatalf("SECRET KEY env variable missing")
+		log.Printf("SECRET KEY env variable missing")
 	}
 
 	server := api.NewServer(s.Db, jwtSecret)
@@ -59,7 +61,8 @@ func ServeHandler(s *State, cmd Command) error {
 	log.Printf("   GET    /api/me             - Get current user (auth required)")
 	log.Printf("   GET    /api/health         - Health check")
 
-	addr := fmt.Sprintf(":%s", port)
+	// addr := fmt.Sprintf(":%s", port)
+	addr := ":" + port
 	if err := http.ListenAndServe(addr, server); err != nil {
 		return fmt.Errorf("server error: %w", err)
 	}
