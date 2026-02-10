@@ -1,0 +1,55 @@
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Frontend (Next.js) - not needed in backend deployment
+blog-frontend/
+blog-frontend/node_modules/
+blog-frontend/.next/
+blog-frontend/.env.local
+blog-frontend/.env
+
+# Development and testing
+*_test.go
+tests/
+examples/
+scripts/
+tmp/
+docker-compose.yml
+
+# Build artifacts
+node_modules/
+vendor/
+bin/
+*.exe
+*.log
+*.out
+
+# Documentation
+FRONTEND_SETUP.md
+DEPLOYMENT.md
+README.md
+README_SERVICE.md
+QUICK_REFERENCE.md
+PROJECT_INDEX.md
+SETUP_COMPLETE.md
+
+# Configuration and system files
+*.plist
+.DS_Store
+.gcloudignore
+gator.service
+com.gator.aggregator.plist
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
