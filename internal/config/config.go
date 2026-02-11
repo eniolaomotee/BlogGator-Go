@@ -36,17 +36,17 @@ import (
 // }
 
 func getConfigFilePath() string {
-    // Directly use mounted secret path
-    if _, err := os.Stat("/app/config/gator-config.json"); err == nil {
-        return "/app/config/gator-config.json"
-    }
+	// Directly use mounted secret path
+	if _, err := os.Stat("/app/config/gator-config.json"); err == nil {
+		return "/app/config/gator-config.json"
+	}
 
-    // Fallbacks (optional)
-    if home, err := os.UserHomeDir(); err == nil {
-        return filepath.Join(home, ".gatorconfig.json")
-    }
+	// Fallbacks (optional)
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, ".gatorconfig.json")
+	}
 
-    return "/app/gatorconfig.json"
+	return "/app/gatorconfig.json"
 }
 
 func ServeHandler(s *State, cmd Command) error {
