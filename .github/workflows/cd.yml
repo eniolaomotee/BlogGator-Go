@@ -23,6 +23,10 @@ jobs:
             - name: Set up cloud SDK
               uses: google-github-actions/setup-gcloud@v2
 
+            - name: Debug - List files
+              run: ls -R
+
+
             # Build and push image using Cloud Build
             - name: Build and push image
               run: |
