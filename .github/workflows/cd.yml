@@ -23,10 +23,6 @@ jobs:
             - name: Set up cloud SDK
               uses: google-github-actions/setup-gcloud@v2
 
-            - name: Debug - List files
-              run: ls -R
-
-
             # Build and push image using Cloud Build
             - name: Build and push image
               run: |
@@ -41,4 +37,5 @@ jobs:
                   --image us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
                   --region us-central1 \
                   --platform managed \
+                  --update-secret="/app/config/gator-config.json=gator-config-secret:latest"
                   --quiet
