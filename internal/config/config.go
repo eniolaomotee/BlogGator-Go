@@ -36,18 +36,22 @@ import (
 // }
 
 func getConfigFilePath() string {
-	// First, try env var
+	// First, check if the env var is set
 	if path := os.Getenv("GATOR_CONFIG_FILE"); path != "" {
 		return path
 	}
 
-	// Then fallback to old logic
+	// Check standard app path
 	if _, err := os.Stat("/app/config/gator-config.json"); err == nil {
 		return "/app/config/gator-config.json"
 	}
+
+	// Fallback to home dir
 	if home, err := os.UserHomeDir(); err == nil {
 		return filepath.Join(home, ".gatorconfig.json")
 	}
+
+	// Last resort
 	return "/app/gatorconfig.json"
 }
 
