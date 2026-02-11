@@ -20,19 +20,19 @@ import (
 )
 
 func getConfigFilePath() string {
-    // 1. Priority: The Environment Variable we set
-    configFileName := os.Getenv("GATOR_CONFIG_FILE")
-    if configFileName != "" {
-        return configFileName
-    }
+	// 1. Priority: The Environment Variable we set
+	configFileName := os.Getenv("GATOR_CONFIG_FILE")
+	if configFileName != "" {
+		return configFileName
+	}
 
-    // 2. Fallback: The local home directory (for your Mac)
-    if home, err := os.UserHomeDir(); err == nil {
-        return filepath.Join(home, ".gatorconfig.json")
-    }
+	// 2. Fallback: The local home directory (for your Mac)
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, ".gatorconfig.json")
+	}
 
-    // 3. Last resort
-    return "/app/gatorconfig.json" 
+	// 3. Last resort
+	return "/app/gatorconfig.json"
 }
 
 func ServeHandler(s *State, cmd Command) error {
