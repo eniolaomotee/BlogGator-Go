@@ -36,16 +36,18 @@ import (
 // }
 
 func getConfigFilePath() string {
-	// Directly use mounted secret path
+	// First, try env var
+	if path := os.Getenv("GATOR_CONFIG_FILE"); path != "" {
+		return path
+	}
+
+	// Then fallback to old logic
 	if _, err := os.Stat("/app/config/gator-config.json"); err == nil {
 		return "/app/config/gator-config.json"
 	}
-
-	// Fallbacks (optional)
 	if home, err := os.UserHomeDir(); err == nil {
 		return filepath.Join(home, ".gatorconfig.json")
 	}
-
 	return "/app/gatorconfig.json"
 }
 
