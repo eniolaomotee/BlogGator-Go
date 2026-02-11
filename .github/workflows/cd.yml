@@ -12,19 +12,28 @@ jobs:
         steps:
             - name: checkout code
               uses: actions/checkout@v6
-
             
-            - name: Login to DockerHub
-              uses: docker/login-action@v2
+            # Authenticate with GCP
+            - name: Authenticate to Google cloud
+              uses: google-github-actions/auth@v1
               with:
-                username: ${{ secrets.DOCKERHUB_USERNAME}}
-                password: ${{ secrets.DOCKERHUB_TOKEN}}
-            
-            - name: Build Image 
+                credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+            # Set up gcloud CLI
+            - name: Set up cloud SDK
+              uses: google-github-actions/setup-gcloud@v2
+
+            # Build and push image using Cloud Build
+            - name: Build and push image
               run: |
-                docker build -t eniolaomotee/bloggator:${{ github.sha }} .
-            
-            - name: Push Image to Registry
+                gcloud builds submit \
+                  --tag us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }}
+
+            # Deploy to Cloud Run
+            - name: Deploy to Cloud Run
               run: |
-                docker tag eniolaomotee/bloggator:${{ github.sha }} eniolaomotee/bloggator:latest
-                docker push eniolaomotee/bloggator:${{ github.sha }}
+                gcloud run deploy api-service \
+                  --image us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
+                  --region us-central1 \
+                  --platform managed \
+                  --quiet

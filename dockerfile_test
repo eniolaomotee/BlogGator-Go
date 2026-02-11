@@ -1,0 +1,51 @@
+# Build stage
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache git
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o gator ./cmd/gator
+
+# Runtime stage
+FROM alpine:3.18
+
+RUN apk add --no-cache ca-certificates curl
+
+WORKDIR /app
+
+# Copy the binary from builder to the root of the
+COPY --from=builder /app/gator .
+
+# Copy SQL files
+COPY sql ./sql
+
+# Create a non-root user for runtime
+RUN addgroup -S app && adduser -S -G app app
+
+# Default port (Cloud Run will override via env var `PORT`)
+ENV PORT=8080
+
+# Expose port (informational)
+EXPOSE 8080
+
+# Health check using the PORT env var (shell form expands $PORT)
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
+    CMD curl -f http://localhost:$PORT/api/health || exit 1
+
+# Run as non-root user
+USER app
+
+# Start the application, expanding the `PORT` env var at runtime
+CMD ["sh", "-c", "./gator serve ${PORT}"]
