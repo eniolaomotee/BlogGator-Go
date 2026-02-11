@@ -19,28 +19,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// func getConfigFilePath() string {
-// 	// 1. Priority: The Environment Variable we set
-// 	configFileName := os.Getenv("GATOR_CONFIG_FILE")
-// 	if configFileName != "" {
-// 		return configFileName
-// 	}
-
-// 	// 2. Fallback: The local home directory (for your Mac)
-// 	if home, err := os.UserHomeDir(); err == nil {
-// 		return filepath.Join(home, ".gatorconfig.json")
-// 	}
-
-// 	// 3. Last resort
-// 	return "/app/gatorconfig.json"
-// }
-
 func getConfigFilePath() string {
-	// First, check if the env var is set
-	if path := os.Getenv("GATOR_CONFIG_FILE"); path != "" {
-		return path
-	}
-
 	// Check standard app path
 	if _, err := os.Stat("/app/config/gator-config.json"); err == nil {
 		return "/app/config/gator-config.json"
@@ -90,47 +69,23 @@ func ServeHandler(s *State, cmd Command) error {
 	return nil
 }
 
-// func Read() (Config, error) {
-// 	filePath := getConfigFilePath()
-
-// 	data, err := os.ReadFile(filePath)
-// 	if err != nil {
-// 		return Config{}, fmt.Errorf("error reading file: %v", err)
-// 	}
-
-// 	var conf Config
-
-// 	err = json.Unmarshal(data, &conf)
-// 	if err != nil {
-// 		return Config{}, fmt.Errorf("couldn't unmarshall data : %v", err)
-// 	}
-
-// 	return conf, nil
-// }
-
 func Read() (Config, error) {
 	filePath := getConfigFilePath()
-	conf := Config{
-		DBURL:    "postgres://fallback_user:fallback_pass@localhost:5432/fallback_db",
-		UserName: "default_user",
-	}
 
-	// Try to read the file
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		fmt.Printf("Warning: config file %s not found, using defaults\n", filePath)
-	} else {
-		if err := json.Unmarshal(data, &conf); err != nil {
-			fmt.Printf("Warning: could not parse config file, using defaults: %v\n", err)
+		// In Docker/Cloud Run there is no config file; build config from env so serve can start
+		if dbURL := os.Getenv("DB_URL"); dbURL != "" {
+			return Config{DbURL: dbURL}, nil
 		}
+		return Config{}, fmt.Errorf("error reading file: %v", err)
 	}
 
-	// Override with environment variables if present
-	if dbEnv := os.Getenv("DB_URL"); dbEnv != "" {
-		conf.DBURL = dbEnv
-	}
-	if userEnv := os.Getenv("CURRENT_USER_NAME"); userEnv != "" {
-		conf.UserName = userEnv
+	var conf Config
+
+	err = json.Unmarshal(data, &conf)
+	if err != nil {
+		return Config{}, fmt.Errorf("couldn't unmarshall data : %v", err)
 	}
 
 	return conf, nil
