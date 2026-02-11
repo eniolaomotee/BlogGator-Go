@@ -30,13 +30,13 @@ jobs:
                   --tag us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
                   .
 
-            # Deploy to Cloud Run
+           # Deploy to Cloud Run
             - name: Deploy to Cloud Run
               run: |
                 gcloud run deploy api-service \
                   --image us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
                   --region us-central1 \
                   --platform managed \
-                  --set-env-vars "GATOR_CONFIG_FILE=/app/config/gator-config.json" \
+                  --update-secrets GATOR_CONFIG_FILE=gator-config-secret:latest \
                   --allow-unauthenticated \
                   --quiet
