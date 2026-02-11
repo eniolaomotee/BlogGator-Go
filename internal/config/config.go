@@ -90,19 +90,47 @@ func ServeHandler(s *State, cmd Command) error {
 	return nil
 }
 
+// func Read() (Config, error) {
+// 	filePath := getConfigFilePath()
+
+// 	data, err := os.ReadFile(filePath)
+// 	if err != nil {
+// 		return Config{}, fmt.Errorf("error reading file: %v", err)
+// 	}
+
+// 	var conf Config
+
+// 	err = json.Unmarshal(data, &conf)
+// 	if err != nil {
+// 		return Config{}, fmt.Errorf("couldn't unmarshall data : %v", err)
+// 	}
+
+// 	return conf, nil
+// }
+
 func Read() (Config, error) {
 	filePath := getConfigFilePath()
-
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return Config{}, fmt.Errorf("error reading file: %v", err)
+	conf := Config{
+		DBURL:    "postgres://fallback_user:fallback_pass@localhost:5432/fallback_db",
+		UserName: "default_user",
 	}
 
-	var conf Config
-
-	err = json.Unmarshal(data, &conf)
+	// Try to read the file
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return Config{}, fmt.Errorf("couldn't unmarshall data : %v", err)
+		fmt.Printf("Warning: config file %s not found, using defaults\n", filePath)
+	} else {
+		if err := json.Unmarshal(data, &conf); err != nil {
+			fmt.Printf("Warning: could not parse config file, using defaults: %v\n", err)
+		}
+	}
+
+	// Override with environment variables if present
+	if dbEnv := os.Getenv("DB_URL"); dbEnv != "" {
+		conf.DBURL = dbEnv
+	}
+	if userEnv := os.Getenv("CURRENT_USER_NAME"); userEnv != "" {
+		conf.UserName = userEnv
 	}
 
 	return conf, nil
