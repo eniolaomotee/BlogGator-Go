@@ -38,5 +38,5 @@ jobs:
                   --region us-central1 \
                   --platform managed \
                   --set-env-vars "GATOR_CONFIG_FILE=/app/config/gator-config.json" \
-                  --allow-unauthenticated 
+                  --allow-unauthenticated \
                   --quiet
