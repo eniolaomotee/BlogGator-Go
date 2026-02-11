@@ -37,6 +37,6 @@ jobs:
                   --image us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
                   --region us-central1 \
                   --platform managed \
-                  --update-secrets="/app/config/gator-config.json=gator-config-secret:latest"
                   --set-env-vars "GATOR_CONFIG_FILE=/app/config/gator-config.json"
+                  --allow-unauthenticated 
                   --quiet
