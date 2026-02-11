@@ -38,4 +38,5 @@ jobs:
                   --region us-central1 \
                   --platform managed \
                   --update-secrets="/app/config/gator-config.json=gator-config-secret:latest"
+                  --set-env-vars "GATOR_CONFIG_FILE=/app/config/gator-config.json"
                   --quiet
