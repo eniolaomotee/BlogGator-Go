@@ -45,7 +45,7 @@ jobs:
             - name: Run database migrations
               env:
                 DATABASE_URL: postgres://${{ secrets.DATABASE_USER }}:${{ secrets.DATABASE_PASSWORD }}@${{ secrets.DATABASE_HOST }}:${{ secrets.DATABASE_PORT }}/${{ secrets.DATABASE_NAME }}?sslmode=disable
-              run: ./scripts/migrateup.sh
+              run: bash ./scripts/migrateup.sh
 
             # Deploy to Cloud Run
             - name: Deploy to Cloud Run
