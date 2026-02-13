@@ -19,16 +19,33 @@ jobs:
               with:
                 credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-            # Set up gcloud CLI
+            # Set up gcloud SDK
             - name: Set up cloud SDK
               uses: google-github-actions/setup-gcloud@v2
+            
+            # Setu up Go
+            - name: Setup Go
+              uses: actions/setup-go@v6
+              with:
+                go-version: "1.25.5"
+            
 
-            # Build and push image using Cloud Build
+            # Install goose
+            - name: Install goose
+              run: go install github.com/pressly/goose/v3/cmd/goose@latest
+
+            # Build and push image (first so we don't migrate if build fails) using Cloud Build
             - name: Build and push image
               run: |
                 gcloud builds submit \
                   --tag us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
                   .
+
+            # Run database migrations
+            - name: Run database migrations
+              env:
+                DATABASE_URL: postgres://${{ secrets.DATABASE_USER }}:${{ secrets.DATABASE_PASSWORD }}@${{ secrets.DATABASE_HOST }}:${{ secrets.DATABASE_PORT }}/${{ secrets.DATABASE_NAME }}?sslmode=disable
+              run: ./scripts/migrateup.sh
 
             # Deploy to Cloud Run
             - name: Deploy to Cloud Run
