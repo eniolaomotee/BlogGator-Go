@@ -41,6 +41,14 @@ jobs:
                   --tag us-central1-docker.pkg.dev/abstract-arbor-486909-f5/bloggator-repo/api-service:${{ github.sha }} \
                   .
 
+            # Start Cloud SQL auth proxy
+            - name: Start Cloud SQL Auth Proxy
+              run: |
+                curl -o cloud-sql-proxy -L https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.12.0/cloud-sql-proxy.linux.amd64
+                chmod +x cloud-sql-proxy
+                ./cloud-sql-proxy ${{ secrets.CLOUDSQL_INSTANCE }} --port 5432 &
+                sleep 2
+
             # Run database migrations
             - name: Run database migrations
               env:
