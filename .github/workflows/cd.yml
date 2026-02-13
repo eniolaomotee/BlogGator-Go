@@ -46,13 +46,19 @@ jobs:
               run: |
                 curl -o cloud-sql-proxy -L https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.12.0/cloud-sql-proxy.linux.amd64
                 chmod +x cloud-sql-proxy
-                ./cloud-sql-proxy ${{ secrets.CLOUDSQL_INSTANCE }} --port 5432 &
-                sleep 2
+                ./cloud-sql-proxy "${{ secrets.CLOUDSQL_INSTANCE }}" --address 127.0.0.1 --port 5432 --verbose &
+                sleep 3
+
+            - name: Test DB connection
+              env:
+                PGPASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+              run: |
+                  psql "postgres://${{ secrets.DATABASE_USER }}@127.0.0.1:5432/${{ secrets.DATABASE_NAME }}?sslmode=disable" -c "SELECT 1;"
 
             # Run database migrations
             - name: Run database migrations
               env:
-                DATABASE_URL: postgres://${{ secrets.DATABASE_USER }}:${{ secrets.DATABASE_PASSWORD }}@${{ secrets.DATABASE_HOST }}:${{ secrets.DATABASE_PORT }}/${{ secrets.DATABASE_NAME }}?sslmode=disable
+                DATABASE_URL: postgres://${{ secrets.DATABASE_USER }}:${{ secrets.DATABASE_PASSWORD }}@127.0.0.1:5432/${{ secrets.DATABASE_NAME }}?sslmode=disable
               run: bash ./scripts/migrateup.sh
 
             # Deploy to Cloud Run
